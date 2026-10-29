@@ -66,7 +66,7 @@ func run(args []string, desktop string, stdin *bufio.Reader, out io.Writer) int 
 	if rep.Changed {
 		target := filepath.Join(dir, filepath.Base(in))
 		if sameFile(target, in) {
-			target = filepath.Join(dir, baseName(in)+" - linked"+filepath.Ext(in))
+			target = filepath.Join(dir, baseName(in)+" - linked.spatial.json")
 		}
 		if err := os.WriteFile(target, result, 0o644); err != nil {
 			say("Couldn't write %s: %v", target, err)

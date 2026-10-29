@@ -21,11 +21,13 @@ Skip the manual Godot step of adding an array slot to an HQ and clicking each ve
 ## Behavior (decided)
 - **Checklist before adding** (added 2026-10-29 by user): for each HQ, the newly found spawners are listed with their vehicle type, all ticked; the player unticks what they don't want (numbers, ranges like 5-7, A = all, N = none), Enter moves on. Already-linked spawners aren't listed. Reason: some maps (Dead Seas) have capture-point spawners on purpose inside an HQ polygon. The engine is split into `Find` (the checklist) and `Apply` (add the picked ones) so Armory can show real checkboxes.
 - **Add only.** Existing entries stay; no duplicates; new ones appended in file order.
-- **Top-down check, height ignored.** Verified on Dead Seas: both HQs match their current 13 spawners exactly.
+- **Top-down check, height ignored.** Verified on Dead Seas: both HQs' current 13 spawners are all found. Team 2's polygon also covers 10 capture point B/J spawners; those are meant to stay at the capture points, which is why the checklist exists.
 - **Original untouched.** Output goes to a Desktop folder named after the spatial (same pattern as Spatial Poly Snap), with a `.txt` report.
 - **Nothing found → HQ left alone.** If no spawners are inside an HQ's polygon, that HQ is not touched (user's rule, clarified 2026-10-29 after testing Andy's SDK 5 maps).
 - **Missing slot is created.** Andy's older maps have HQs with no `VehicleSpawners` at all. The tool creates the array right after `InfantrySpawns` (Godot export order) and adds `"VehicleSpawners"` to the HQ's `linked` list.
 - **A spawner should never be inside two different HQ polygons** (user's rule). If one is, it is added to neither HQ and reported. HQs that share the *same* polygon (Gulf of Lyndon's two Team 2 HQs) each get that polygon's spawners.
+- **Spawners already on a different HQ** (sector maps like Fortunate Sun reuse polygons) are still offered, but marked "(already on <HQ>)" in the checklist and noted in the report.
+- HQs whose fields can't be read, or whose `VehicleSpawners` isn't a list (e.g. `null`), are skipped and reported; odd fields on unrelated objects are ignored.
 - Report lists, per HQ: spawners added, spawners already linked, and warnings (nothing found, no `HQArea`, `HQArea` pointing at a missing polygon, spawner inside two different HQ polygons).
 
 ## Approaches considered

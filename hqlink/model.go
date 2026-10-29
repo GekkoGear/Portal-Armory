@@ -15,6 +15,7 @@ type hq struct {
 	Vehicles    []string
 	HasVehicles bool // the VehicleSpawners key exists
 	VehiclesBad bool // VehicleSpawners exists but isn't a list of strings
+	Unreadable  bool // the HQ object has fields of the wrong kind
 }
 
 type spawner struct {
@@ -55,25 +56,49 @@ func parseSpatial(b []byte) (spatial, error) {
 		if o.Open < 0 {
 			continue
 		}
-		var r rawObj
-		if err := json.Unmarshal(b[o.Open:o.Close+1], &r); err != nil {
-			return spatial{}, errors.Join(ErrNotSpatial, err)
+		// Only decode the three object types the tool cares about, so an odd
+		// field on any other object can't make the whole file unreadable.
+		tf, ok := o.Fields["type"]
+		if !ok {
+			continue
 		}
-		switch r.Type {
+		var typ string
+		if json.Unmarshal(b[tf.Val.Start:tf.Val.End], &typ) != nil {
+			continue
+		}
+		if typ != "HQ_PlayerSpawner" && typ != "VehicleSpawner" && typ != "PolygonVolume" {
+			continue
+		}
+		var r rawObj
+		bad := json.Unmarshal(b[o.Open:o.Close+1], &r) != nil
+		switch typ {
 		case "HQ_PlayerSpawner":
+			if bad {
+				// Keep the HQ so the report can say it was skipped.
+				var idOnly struct {
+					ID   string `json:"id"`
+					Name string `json:"name"`
+				}
+				json.Unmarshal(b[o.Open:o.Close+1], &idOnly)
+				s.HQs = append(s.HQs, hq{Index: i, ID: idOnly.ID, Name: idOnly.Name, Unreadable: true})
+				continue
+			}
 			h := hq{Index: i, ID: r.ID, Name: r.Name, AreaID: r.HQArea}
-			if _, ok := o.Fields["VehicleSpawners"]; ok {
+			if vf, ok := o.Fields["VehicleSpawners"]; ok {
 				h.HasVehicles = true
-				if err := json.Unmarshal(r.VehicleSpawners, &h.Vehicles); err != nil {
+				if b[vf.Val.Start] != '[' || json.Unmarshal(r.VehicleSpawners, &h.Vehicles) != nil {
 					h.VehiclesBad = true
 				}
 			}
 			s.HQs = append(s.HQs, h)
 		case "VehicleSpawner":
-			if r.Position != nil && r.ID != "" {
+			if !bad && r.Position != nil && r.ID != "" {
 				s.Spawners = append(s.Spawners, spawner{ID: r.ID, VehicleType: r.VehicleType, X: r.Position.X, Z: r.Position.Z})
 			}
 		case "PolygonVolume":
+			if bad {
+				continue
+			}
 			pts := make([]Point, len(r.Points))
 			for k, p := range r.Points {
 				pts[k] = Point{p.X, p.Z}

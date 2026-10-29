@@ -39,6 +39,11 @@ func (r Report) Text(inputName string) string {
 			}
 		}
 		list("Added", h.Added)
+		for _, c := range h.Found {
+			if len(c.AlsoLinkedTo) > 0 && contains(h.Added, c.SpawnerID) {
+				line("  Note: %s was already on %s too.", c.SpawnerID, strings.Join(c.AlsoLinkedTo, ", "))
+			}
+		}
 		list("Found but not picked", h.NotPicked)
 		list("Already linked", h.AlreadyLinked)
 		line("")
@@ -64,4 +69,13 @@ func orNone(s string) string {
 		return "(none)"
 	}
 	return s
+}
+
+func contains(l []string, s string) bool {
+	for _, x := range l {
+		if x == s {
+			return true
+		}
+	}
+	return false
 }

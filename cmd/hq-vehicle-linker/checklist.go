@@ -68,7 +68,11 @@ func printList(out io.Writer, name string, found []hqlink.Candidate, ticked []bo
 		if t == "" {
 			t = "?"
 		}
-		fmt.Fprintf(out, "  %s %3d  %-*s  %s\n", box, i+1, width, t, c.SpawnerID)
+		also := ""
+		if len(c.AlsoLinkedTo) > 0 {
+			also = "   (already on " + strings.Join(c.AlsoLinkedTo, ", ") + ")"
+		}
+		fmt.Fprintf(out, "  %s %3d  %-*s  %s%s\n", box, i+1, width, t, c.SpawnerID, also)
 	}
 	fmt.Fprintf(out, "  %d of %d ticked\n", on, len(found))
 }

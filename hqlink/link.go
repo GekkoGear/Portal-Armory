@@ -27,13 +27,16 @@ const (
 	NoArea       HQStatus = "skipped - no HQArea polygon linked"
 	BadArea      HQStatus = "skipped - HQArea polygon not found in the file"
 	BadList      HQStatus = "skipped - VehicleSpawners is not a normal list"
+	BadHQ        HQStatus = "skipped - couldn't read this HQ's fields"
+	AllOverlap   HQStatus = "nothing offered - every spawner inside also sits in another HQ's polygon"
 	NoPlace      HQStatus = "skipped - couldn't find where to add VehicleSpawners"
 )
 
 // Candidate is a spawner inside an HQ's polygon that isn't in its list yet.
 type Candidate struct {
-	SpawnerID   string
-	VehicleType string // e.g. "Abrams"; empty if the spawner has none set
+	SpawnerID    string
+	VehicleType  string   // e.g. "Abrams"; empty if the spawner has none set
+	AlsoLinkedTo []string // other HQs (IDs) that already list this spawner
 }
 
 // HQResult is the outcome for one HQ.
@@ -121,6 +124,8 @@ func analyze(in []byte) (*analysis, error) {
 		r := HQResult{ID: h.ID, Name: h.Name, AreaID: h.AreaID}
 		poly, ok := s.Polys[h.AreaID]
 		switch {
+		case h.Unreadable:
+			r.Status = BadHQ
 		case h.AreaID == "":
 			r.Status = NoArea
 		case !ok || len(poly) < 3:
@@ -145,17 +150,25 @@ func analyze(in []byte) (*analysis, error) {
 
 	overlapping := map[string]bool{}
 	for _, sp := range s.Spawners {
-		if len(polysOf[sp.ID]) > 1 {
+		if len(polysOf[sp.ID]) > 1 && !overlapping[sp.ID] {
 			overlapping[sp.ID] = true
 			o := Overlap{SpawnerID: sp.ID}
 			for i, h := range s.HQs {
 				for _, in := range inside[i] {
 					if in.ID == sp.ID {
 						o.HQIDs = append(o.HQIDs, h.ID)
+						break
 					}
 				}
 			}
 			a.rep.Overlaps = append(a.rep.Overlaps, o)
+		}
+	}
+
+	linkedBy := map[string][]string{} // spawner -> HQ IDs whose list already has it
+	for _, h := range s.HQs {
+		for _, v := range h.Vehicles {
+			linkedBy[v] = append(linkedBy[v], h.ID)
 		}
 	}
 
@@ -168,19 +181,30 @@ func analyze(in []byte) (*analysis, error) {
 		for _, v := range h.Vehicles {
 			existing[v] = true
 		}
-		seen := map[string]bool{}
+		seen := map[string]bool{} // duplicate spawner ids are only offered once
 		for _, sp := range inside[i] {
+			if seen[sp.ID] {
+				continue
+			}
+			seen[sp.ID] = true
 			switch {
 			case existing[sp.ID]:
 				r.AlreadyLinked = append(r.AlreadyLinked, sp.ID)
-			case !overlapping[sp.ID] && !seen[sp.ID]:
-				seen[sp.ID] = true
-				r.Found = append(r.Found, Candidate{SpawnerID: sp.ID, VehicleType: sp.VehicleType})
+			case !overlapping[sp.ID]:
+				c := Candidate{SpawnerID: sp.ID, VehicleType: sp.VehicleType}
+				for _, other := range linkedBy[sp.ID] {
+					if other != h.ID {
+						c.AlsoLinkedTo = append(c.AlsoLinkedTo, other)
+					}
+				}
+				r.Found = append(r.Found, c)
 			}
 		}
 		switch {
 		case len(inside[i]) == 0:
 			r.Status = NothingFound
+		case len(r.Found) == 0 && len(r.AlreadyLinked) == 0:
+			r.Status = AllOverlap
 		case len(r.Found) == 0:
 			r.Status = UpToDate
 		default:
@@ -238,7 +262,7 @@ func Apply(in []byte, pick map[string][]string) ([]byte, Report, error) {
 		}
 		r.Status = Added
 		r.CreatedList = !h.HasVehicles
-		if _, has := o.Fields["linked"]; !has {
+		if lf, has := o.Fields["linked"]; !has || a.b[lf.Val.Start] != '[' {
 			r.Note = "this HQ has no 'linked' list; open it in Godot to check the vehicles show up"
 		}
 		edits = append(edits, e...)

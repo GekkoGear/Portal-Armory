@@ -20,14 +20,27 @@ func desktopDir() string {
 	free := ole32.NewProc("CoTaskMemFree")
 	var p *uint16
 	r, _, _ := get.Call(uintptr(unsafe.Pointer(&folderIDDesktop)), 0, 0, uintptr(unsafe.Pointer(&p)))
+	if p != nil {
+		defer free.Call(uintptr(unsafe.Pointer(p))) // freed even when the call fails
+	}
 	if r == 0 && p != nil {
-		defer free.Call(uintptr(unsafe.Pointer(p)))
-		return syscall.UTF16ToString(unsafe.Slice(p, 32768))
+		n := 0
+		for *(*uint16)(unsafe.Add(unsafe.Pointer(p), n*2)) != 0 {
+			n++
+		}
+		if path := syscall.UTF16ToString(unsafe.Slice(p, n)); path != "" {
+			return path
+		}
 	}
 	return fallbackDesktop()
 }
 
 func fallbackDesktop() string {
-	home, _ := os.UserHomeDir()
-	return filepath.Join(home, "Desktop")
+	if home, err := os.UserHomeDir(); err == nil {
+		return filepath.Join(home, "Desktop")
+	}
+	if exe, err := os.Executable(); err == nil {
+		return filepath.Dir(exe)
+	}
+	return "."
 }

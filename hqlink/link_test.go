@@ -285,15 +285,6 @@ func sameExceptLists(t *testing.T, in, out []byte) {
 	}
 }
 
-func contains(l []string, s string) bool {
-	for _, x := range l {
-		if x == s {
-			return true
-		}
-	}
-	return false
-}
-
 func TestLinkOnlyListsChange(t *testing.T) {
 	for _, f := range []string{"small_pretty.json", "small_min.json", "small_crlf.json"} {
 		in := load(t, f)

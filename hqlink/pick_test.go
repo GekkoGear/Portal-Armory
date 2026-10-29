@@ -14,11 +14,11 @@ func TestFindChangesNothingAndLists(t *testing.T) {
 		t.Fatal(err)
 	}
 	b := result(t, rep, "HQ_B")
-	want := []Candidate{{"VB1", "Abrams"}, {"VB2", "Abrams"}, {boat, "RHIB"}}
+	want := []Candidate{{"VB1", "Abrams", nil}, {"VB2", "Abrams", nil}, {boat, "RHIB", nil}}
 	if b.Status != Found || !reflect.DeepEqual(b.Found, want) || len(b.Added) != 0 {
 		t.Errorf("HQ_B = %+v", b)
 	}
-	if a := result(t, rep, "HQ_A"); !reflect.DeepEqual(a.Found, []Candidate{{"VA2", "Abrams"}}) || !reflect.DeepEqual(a.AlreadyLinked, []string{"VA1"}) {
+	if a := result(t, rep, "HQ_A"); !reflect.DeepEqual(a.Found, []Candidate{{"VA2", "Abrams", nil}}) || !reflect.DeepEqual(a.AlreadyLinked, []string{"VA1"}) {
 		t.Errorf("HQ_A = %+v", a)
 	}
 	if rep.Changed || rep.FoundCount() != 8 {
