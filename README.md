@@ -3,7 +3,8 @@
 A tool to help with mundane tasks to help you get Battlefield 6 Portal projects out faster.
 
 Portal Armory v2 is in development. Its **Portal Finalization** tab is built on the
-`polysnap` package in this repo, which also ships on its own as **Spatial Poly Snap**.
+`polysnap` and `hqlink` packages in this repo, which also ship on their own as
+**Spatial Poly Snap** and **HQ Vehicle Linker**.
 
 ## Spatial Poly Snap
 
@@ -34,12 +35,38 @@ byte-for-byte the same output as his tool. Thanks to defanz0r for the original m
 
 Everything runs offline.
 
+## HQ Vehicle Linker
+
+Drag a `.spatial.json` onto `HQ Vehicle Linker.exe`. For every HQ, it finds the vehicle spawners
+inside the HQ's `HQArea` polygon (seen from above - height is ignored) and adds them to that HQ's
+`VehicleSpawners` list, so they show on that HQ in the deploy menu. Before anything is added it shows
+each HQ's newly found spawners as a ticked checklist (with vehicle types) - untick any you don't want
+by typing their numbers (`3`, `5-8`, `N` for none), then press Enter. Results go to a
+`<name> - HQ Vehicles` folder on your Desktop:
+
+| File | What it is |
+|---|---|
+| `<name>.spatial.json` | Your spatial with the HQ vehicle lists filled in (only written if something changed) |
+| `HQ Vehicle Linker report.txt` | What each HQ got, and anything you should fix by hand |
+
+- **Only adds.** Spawners you linked by hand stay; nothing is added twice, so a second run changes nothing.
+- **Creates the list if it's missing** (e.g. Andy's older Conquest maps), right after `InfantrySpawns`,
+  and adds `VehicleSpawners` to the HQ's `linked` list so Godot shows it.
+- **Leaves an HQ alone** when nothing is inside its polygon, or it has no polygon linked.
+- **A spawner inside two different HQ polygons is added to neither** and listed in the report - fix the
+  polygons. HQs that share one polygon each get its spawners.
+- **Nothing else changes.** Only the `VehicleSpawners` and `linked` lists are edited, in place; key order,
+  indentation, line endings and minification stay as they were. Your original file is never changed.
+
+Everything runs offline.
+
 ## Building
 
 Requires Go 1.24+.
 
 ```
 GOOS=windows GOARCH=amd64 go build -trimpath -ldflags "-s -w" -o "Spatial Poly Snap.exe" ./cmd/spatial-poly-snap
+GOOS=windows GOARCH=amd64 go build -trimpath -ldflags "-s -w" -o "HQ Vehicle Linker.exe" ./cmd/hq-vehicle-linker
 go test ./...
 ```
 
@@ -50,4 +77,11 @@ res := polysnap.Process(data, "Map.spatial.json")
 if res.Snapped == nil { /* res.Failed says why; res.ReportText() explains */ }
 // res.Snapped, res.Minified, res.Summary(), res.Sections(), res.ReportText()
 folder, snappedName, minifiedName, reportName := polysnap.OutputNames("Map.spatial.json")
+```
+
+```go
+found, err := hqlink.Find(data)         // found.HQs[i].Found is the checklist; err wraps hqlink.ErrNotSpatial
+out, rep, err := hqlink.Apply(data, pick) // pick: HQ ID -> ticked spawner IDs (found.PickAll() = everything)
+// out is identical to data when !rep.Changed; rep.HQs, rep.Overlaps, rep.AddedCount(), rep.Text(name)
+folder, spatialName, reportName := hqlink.OutputNames("Map.spatial.json")
 ```
