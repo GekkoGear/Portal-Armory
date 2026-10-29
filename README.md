@@ -39,9 +39,10 @@ Everything runs offline.
 
 Drag a `.spatial.json` onto `HQ Vehicle Linker.exe`. For every HQ, it finds the vehicle spawners
 inside the HQ's `HQArea` polygon (seen from above - height is ignored) and adds them to that HQ's
-`VehicleSpawners` list, so they show on that HQ in the deploy menu. Before anything is added it shows
-each HQ's newly found spawners as a ticked checklist (with vehicle types) - untick any you don't want
-by typing their numbers (`3`, `5-8`, `N` for none), then press Enter. Results go to a
+`VehicleSpawners` list, so they show on that HQ in the deploy menu. Before anything is added it opens a
+page in your browser listing each HQ's newly found spawners (with vehicle types) as checkboxes, all
+checked. Uncheck any you don't want and press **Add checked vehicles** - checked ones are added,
+unchecked ones aren't. The page is served from your own PC only (127.0.0.1); no internet needed. Results go to a
 `<name> - HQ Vehicles` folder on your Desktop:
 
 | File | What it is |

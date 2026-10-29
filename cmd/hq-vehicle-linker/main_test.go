@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"bytes"
 	"encoding/json"
 	"os"
@@ -9,6 +8,8 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/GekkoGear/portal-armory/hqlink"
 )
 
 func TestOutputDir(t *testing.T) {
@@ -47,7 +48,7 @@ func TestRunWritesOutput(t *testing.T) {
 	in := copyFixture(t, src)
 	before, _ := os.ReadFile(in)
 	var out bytes.Buffer
-	if code := run([]string{in}, desk, input(""), &out); code != 0 {
+	if code := run([]string{in}, desk, pickAll, &out); code != 0 {
 		t.Fatalf("exit %d: %s", code, out.String())
 	}
 	dir := filepath.Join(desk, "Small Map - HQ Vehicles")
@@ -68,7 +69,7 @@ func TestRunWritesOutput(t *testing.T) {
 	// Dropping the output file again must not overwrite it, and needs no changes.
 	out.Reset()
 	again := filepath.Join(dir, "Small Map.spatial.json")
-	if code := run([]string{again}, desk, input(""), &out); code != 0 || !strings.Contains(out.String(), "No changes were needed") {
+	if code := run([]string{again}, desk, pickAll, &out); code != 0 || !strings.Contains(out.String(), "No changes were needed") {
 		t.Errorf("second run: %d %s", code, out.String())
 	}
 }
@@ -76,17 +77,17 @@ func TestRunWritesOutput(t *testing.T) {
 func TestRunBadInput(t *testing.T) {
 	desk := t.TempDir()
 	var out bytes.Buffer
-	if code := run(nil, desk, input(""), &out); code != 2 || !strings.Contains(out.String(), "Drag a .spatial.json") {
+	if code := run(nil, desk, pickAll, &out); code != 2 || !strings.Contains(out.String(), "Drag a .spatial.json") {
 		t.Errorf("no args: %d %s", code, out.String())
 	}
 	out.Reset()
-	if code := run([]string{"a", "b"}, desk, input(""), &out); code != 2 {
+	if code := run([]string{"a", "b"}, desk, pickAll, &out); code != 2 {
 		t.Errorf("two args: %d", code)
 	}
 	out.Reset()
 	txt := filepath.Join(t.TempDir(), "notes.txt")
 	os.WriteFile(txt, []byte("hello"), 0o644)
-	if code := run([]string{txt}, desk, input(""), &out); code != 1 || !strings.Contains(out.String(), "not a spatial") {
+	if code := run([]string{txt}, desk, pickAll, &out); code != 1 || !strings.Contains(out.String(), "not a spatial") {
 		t.Errorf("text file: %d %s", code, out.String())
 	}
 	entries, _ := os.ReadDir(desk)
@@ -95,14 +96,24 @@ func TestRunBadInput(t *testing.T) {
 	}
 }
 
-func input(s string) *bufio.Reader { return bufio.NewReader(strings.NewReader(s)) }
+func pickAll(rep hqlink.Report, _ string) (map[string][]string, bool) { return rep.PickAll(), true }
 
-func TestRunChecklist(t *testing.T) {
+func TestRunChecked(t *testing.T) {
 	src, desk := t.TempDir(), t.TempDir()
 	in := copyFixture(t, src)
 	var out bytes.Buffer
-	// HQ_A: Enter (keep VA2). HQ_B: untick 2 (VB2), Enter. HQ_Share: N, Enter. HQ_EmptyList: Enter.
-	if code := run([]string{in}, desk, input("\n2\n\nN\n\n\n"), &out); code != 0 {
+	// Checked: VA2 on HQ_A, VB1 + boat on HQ_B, VC1 on HQ_EmptyList. Nothing on HQ_Share.
+	choose := func(rep hqlink.Report, name string) (map[string][]string, bool) {
+		if name != "Small Map.spatial.json" {
+			t.Errorf("map name %q", name)
+		}
+		return map[string][]string{
+			"HQ_A":         {"VA2"},
+			"HQ_B":         {"VB1", "Veh & \"Boat\" é"},
+			"HQ_EmptyList": {"VC1"},
+		}, true
+	}
+	if code := run([]string{in}, desk, choose, &out); code != 0 {
 		t.Fatalf("exit %d: %s", code, out.String())
 	}
 	b, err := os.ReadFile(filepath.Join(desk, "Small Map - HQ Vehicles", "Small Map.spatial.json"))
@@ -131,43 +142,36 @@ func TestRunChecklist(t *testing.T) {
 			t.Errorf("%s = %v, want %v", id, got[id], w)
 		}
 	}
-	s := out.String()
-	for _, w := range []string{"[ ]   2  Abrams", "2 of 3 ticked", "HQ_B: +2 added, new vehicle list created, 1 not picked", "HQ_Share: " + "vehicles found but none picked"} {
-		if !strings.Contains(s, w) {
+	for _, w := range []string{"HQ_B: +2 added, new vehicle list created, 1 left unchecked", "HQ_Share: vehicles found but none checked"} {
+		if !strings.Contains(out.String(), w) {
 			t.Errorf("output missing %q", w)
 		}
 	}
 }
 
-func TestToggle(t *testing.T) {
-	tk := []bool{true, true, true, true, true, true, true}
-	if bad := toggle("2 5-7", tk); bad != "" || !reflect.DeepEqual(tk, []bool{true, false, true, true, false, false, false}) {
-		t.Errorf("2 5-7 -> %v %q", tk, bad)
+func TestRunCancelled(t *testing.T) {
+	src, desk := t.TempDir(), t.TempDir()
+	in := copyFixture(t, src)
+	var out bytes.Buffer
+	cancel := func(hqlink.Report, string) (map[string][]string, bool) { return nil, false }
+	if code := run([]string{in}, desk, cancel, &out); code != 0 || !strings.Contains(out.String(), "Cancelled") {
+		t.Errorf("%d %s", code, out.String())
 	}
-	toggle("n", tk)
-	if !reflect.DeepEqual(tk, make([]bool, 7)) {
-		t.Errorf("n -> %v", tk)
-	}
-	toggle("A", tk)
-	toggle("3-1,", tk)
-	if !reflect.DeepEqual(tk, []bool{false, false, false, true, true, true, true}) {
-		t.Errorf("3-1 -> %v", tk)
-	}
-	for _, w := range []string{"x", "9", "0", "2-9", "1-"} {
-		if bad := toggle(w, make([]bool, 7)); bad != w {
-			t.Errorf("%q should be rejected, got %q", w, bad)
-		}
+	if entries, _ := os.ReadDir(desk); len(entries) != 0 {
+		t.Error("cancel wrote something")
 	}
 }
 
-func TestChecklistBadInputThenEnter(t *testing.T) {
+func TestRunNothingToPickSkipsPicker(t *testing.T) {
+	src, desk := t.TempDir(), t.TempDir()
+	in := copyFixture(t, src)
 	var out bytes.Buffer
-	rep := hqlinkFind(t)
-	pick := askPicks(rep, input("zzz\n\n\n\n\n"), &out)
-	if !strings.Contains(out.String(), `Didn't understand "zzz"`) {
-		t.Error("no message for bad input")
-	}
-	if len(pick["HQ_A"]) != 1 || len(pick["HQ_B"]) != 3 {
-		t.Errorf("bad input should keep everything ticked: %v", pick)
+	run([]string{in}, desk, pickAll, &out)
+	again := filepath.Join(desk, "Small Map - HQ Vehicles", "Small Map.spatial.json")
+	called := false
+	never := func(hqlink.Report, string) (map[string][]string, bool) { called = true; return nil, false }
+	out.Reset()
+	if code := run([]string{again}, desk, never, &out); code != 0 || called {
+		t.Errorf("picker should not open when nothing is new: %d called=%v", code, called)
 	}
 }

@@ -1,6 +1,7 @@
 // HQ Vehicle Linker: drag a .spatial.json onto the .exe. For each HQ it
-// lists the vehicle spawners inside the HQ's HQArea polygon as a ticked
-// checklist; the ticked ones are added to that HQ's VehicleSpawners list. The original file is never changed; the result goes
+// finds the vehicle spawners inside the HQ's HQArea polygon and shows them
+// as checkboxes in the browser; checked ones are added to that HQ's
+// VehicleSpawners list. The original file is never changed; the result goes
 // to a Desktop folder named after the spatial, with a report.
 package main
 
@@ -16,15 +17,23 @@ import (
 )
 
 func main() {
-	stdin := bufio.NewReader(os.Stdin)
-	code := run(os.Args[1:], desktopDir(), stdin, os.Stdout)
+	// One reader for the console: Enter cancels the checklist, and later closes the window.
+	lines := make(chan string)
+	go func() {
+		sc := bufio.NewScanner(os.Stdin)
+		for sc.Scan() {
+			lines <- sc.Text()
+		}
+		close(lines)
+	}()
+	code := run(os.Args[1:], desktopDir(), browserPicker(lines, os.Stdout, openBrowser), os.Stdout)
 	fmt.Println()
 	fmt.Println("Press Enter to close.")
-	stdin.ReadString('\n')
+	<-lines
 	os.Exit(code)
 }
 
-func run(args []string, desktop string, stdin *bufio.Reader, out io.Writer) int {
+func run(args []string, desktop string, choose picker, out io.Writer) int {
 	say := func(format string, a ...any) { fmt.Fprintf(out, format+"\n", a...) }
 	say("HQ Vehicle Linker v" + hqlink.Version)
 	say("")
@@ -49,8 +58,12 @@ func run(args []string, desktop string, stdin *bufio.Reader, out io.Writer) int 
 	}
 	pick := map[string][]string{}
 	if found.FoundCount() > 0 {
-		say("Untick anything you don't want added. Spawners already in an HQ's list aren't shown.")
-		pick = askPicks(found, stdin, out)
+		var ok bool
+		pick, ok = choose(found, filepath.Base(in))
+		if !ok {
+			say("Cancelled - nothing was changed or saved.")
+			return 0
+		}
 	}
 	result, rep, err := hqlink.Apply(data, pick)
 	if err != nil {
@@ -90,7 +103,7 @@ func run(args []string, desktop string, stdin *bufio.Reader, out io.Writer) int 
 				extra = ", new vehicle list created"
 			}
 			if len(h.NotPicked) > 0 {
-				extra += fmt.Sprintf(", %d not picked", len(h.NotPicked))
+				extra += fmt.Sprintf(", %d left unchecked", len(h.NotPicked))
 			}
 			say("  %s: +%d added%s", name, len(h.Added), extra)
 		} else {

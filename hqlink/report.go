@@ -44,7 +44,7 @@ func (r Report) Text(inputName string) string {
 				line("  Note: %s was already on %s too.", c.SpawnerID, strings.Join(c.AlsoLinkedTo, ", "))
 			}
 		}
-		list("Found but not picked", h.NotPicked)
+		list("Found but left unchecked", h.NotPicked)
 		list("Already linked", h.AlreadyLinked)
 		line("")
 	}

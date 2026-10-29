@@ -19,7 +19,7 @@ Skip the manual Godot step of adding an array slot to an HQ and clicking each ve
 - Overwriting your original file.
 
 ## Behavior (decided)
-- **Checklist before adding** (added 2026-10-29 by user): for each HQ, the newly found spawners are listed with their vehicle type, all ticked; the player unticks what they don't want (numbers, ranges like 5-7, A = all, N = none), Enter moves on. Already-linked spawners aren't listed. Reason: some maps (Dead Seas) have capture-point spawners on purpose inside an HQ polygon. The engine is split into `Find` (the checklist) and `Apply` (add the picked ones) so Armory can show real checkboxes.
+- **Checklist before adding** (added 2026-10-29 by user): for each HQ, the newly found spawners are listed with their vehicle type, all ticked; shown as real checkboxes on a local browser page (served on 127.0.0.1 by the .exe, offline). Checked = added, unchecked = not added. Cancel (page button, or Enter in the console) changes nothing. Already-linked spawners aren't listed. Reason: some maps (Dead Seas) have capture-point spawners on purpose inside an HQ polygon. The engine is split into `Find` (the checklist) and `Apply` (add the picked ones) so Armory can show real checkboxes.
 - **Add only.** Existing entries stay; no duplicates; new ones appended in file order.
 - **Top-down check, height ignored.** Verified on Dead Seas: both HQs' current 13 spawners are all found. Team 2's polygon also covers 10 capture point B/J spawners; those are meant to stay at the capture points, which is why the checklist exists.
 - **Original untouched.** Output goes to a Desktop folder named after the spatial (same pattern as Spatial Poly Snap), with a `.txt` report.

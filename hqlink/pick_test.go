@@ -52,7 +52,7 @@ func TestApplyOnlyPicked(t *testing.T) {
 		t.Errorf("HQ_Share = %s", r.Status)
 	}
 	sameExceptLists(t, in, out)
-	if !strings.Contains(rep.Text("x"), "Found but not picked (1):") {
+	if !strings.Contains(rep.Text("x"), "Found but left unchecked (1):") {
 		t.Error("report missing not-picked list")
 	}
 }

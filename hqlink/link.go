@@ -21,7 +21,7 @@ type HQStatus string
 const (
 	Found        HQStatus = "vehicles found" // Find only: waiting for a pick
 	Added        HQStatus = "vehicles added"
-	NonePicked   HQStatus = "vehicles found but none picked - left alone"
+	NonePicked   HQStatus = "vehicles found but none checked - left alone"
 	UpToDate     HQStatus = "already up to date"
 	NothingFound HQStatus = "no vehicle spawners inside its polygon - left alone"
 	NoArea       HQStatus = "skipped - no HQArea polygon linked"
