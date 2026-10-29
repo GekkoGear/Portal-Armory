@@ -149,3 +149,16 @@ func TestDotnetFormatting(t *testing.T) {
 		t.Errorf("round -1.23455 -> %v", r)
 	}
 }
+
+func TestRenderPreview(t *testing.T) {
+	in := spatial(map[string][]xz{
+		"A": {{0, 0}, {10, 0}, {10, 10}},
+		"B": {{10.05, 0.01}, {20, 0}, {20, 10}},
+	}, []string{"A", "B"})
+	for _, res := range []*Result{Process(in, "x.spatial.json"), Process([]byte(`{"Portal_Dynamic":[]}`), "empty.json")} {
+		png, err := RenderPreview(res)
+		if err != nil || len(png) < 8 || string(png[1:4]) != "PNG" {
+			t.Fatalf("preview failed: %v", err)
+		}
+	}
+}

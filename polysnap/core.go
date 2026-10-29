@@ -28,6 +28,8 @@ type point struct {
 	newX  float64
 	newZ  float64
 	moved bool
+	how   int    // 1 snapped to a corner, 2 slid onto an edge
+	onto  string // what it was moved onto
 }
 
 type volume struct {

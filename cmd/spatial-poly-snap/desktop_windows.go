@@ -4,6 +4,7 @@ package main
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
 	"syscall"
 	"unsafe"
@@ -37,4 +38,9 @@ func desktopDir() string {
 		return "."
 	}
 	return filepath.Join(home, "Desktop")
+}
+
+// openFile shows a file with its default Windows app (e.g. Photos for a PNG).
+func openFile(path string) {
+	exec.Command("rundll32", "url.dll,FileProtocolHandler", path).Start()
 }

@@ -17,3 +17,5 @@ func desktopDir() string {
 	}
 	return filepath.Join(home, "Desktop")
 }
+
+func openFile(path string) {}

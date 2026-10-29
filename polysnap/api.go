@@ -47,12 +47,34 @@ type Result struct {
 	AlreadyAligned         int
 	Renamed                int // names/ids shortened by the minifier
 
+	// Shapes and Changes describe the geometry, for drawing previews.
+	Shapes  []Shape
+	Changes []Change
+
 	Issues     []string // problems that need attention
 	Notes      []string
 	Snaps      []string // one line per point snapped to a corner
 	EdgeMoves  []string // one line per point slid onto an edge
 	OnEdge     []string // corners near a lower volume's edge, left alone
 	NearMisses []string // corners 0.10 - 0.50 m apart, left alone
+}
+
+// Pt is a top-down position (X and Z of the spatial).
+type Pt struct{ X, Z float64 }
+
+// Shape is one polygon volume before and after lining up.
+type Shape struct {
+	Name          string
+	Before, After []Pt
+}
+
+// Change is one moved point.
+type Change struct {
+	Shape, Point int    // indexes into Shapes and Shapes[i].Before
+	From, To     Pt     // position before / after
+	ToEdge       bool   // slid onto an edge (otherwise snapped to a corner)
+	Onto         string // what it was moved onto, e.g. "HQ_Team1 pt 3"
+	Distance     float64
 }
 
 // AddIssue lets a caller (e.g. a file-saving wrapper) add its own problem to the report.
@@ -87,6 +109,19 @@ func Process(data []byte, name string) *Result {
 	findNearMisses(vols, pts, rep)
 	validatePolygons(vols, pts, rep)
 	res.Volumes, res.Points = len(vols), len(pts)
+	for vi, v := range vols {
+		sh := Shape{Name: v.name}
+		for k, pi := range v.pts {
+			p, c := pts[pi], cur(pts[pi])
+			sh.Before = append(sh.Before, Pt{p.x, p.z})
+			sh.After = append(sh.After, Pt{c.x, c.z})
+			if p.moved {
+				res.Changes = append(res.Changes, Change{Shape: vi, Point: k, From: Pt{p.x, p.z}, To: Pt{c.x, c.z},
+					ToEdge: p.how == 2, Onto: p.onto, Distance: dist(p, c)})
+			}
+		}
+		res.Shapes = append(res.Shapes, sh)
+	}
 
 	// Splice the new numbers into the original bytes.
 	type edit struct {

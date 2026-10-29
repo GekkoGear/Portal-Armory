@@ -4,7 +4,10 @@
 // For each, a folder named after the spatial is made on the Desktop holding:
 //   - the snapped spatial (polygon volume points lined up),
 //   - the snapped spatial minified with defanz0r's JsonMinifier rules,
-//   - a "<name> - Snap Report.txt" explaining what changed and any issues.
+//   - a "<name> - Snap Report.txt" explaining what changed and any issues,
+//   - a "<name> - Changes.png" top-down before/after picture of the changes.
+//
+// Before anything is saved, the picture opens and the user is asked to confirm.
 //
 // All the work is done by the polysnap package; this file only handles files.
 package main
@@ -40,9 +43,29 @@ func main() {
 	pause()
 }
 
+var stdin = bufio.NewReader(os.Stdin)
+
 func pause() {
 	fmt.Print("\nPress Enter to close...")
-	bufio.NewReader(os.Stdin).ReadString('\n')
+	stdin.ReadString('\n')
+}
+
+// confirm asks a yes/no question. No answer (closed input) counts as no.
+func confirm(q string) bool {
+	for {
+		fmt.Print(q)
+		line, err := stdin.ReadString('\n')
+		switch strings.ToLower(strings.TrimSpace(line)) {
+		case "y", "yes":
+			return true
+		case "n", "no":
+			return false
+		}
+		if err != nil {
+			return false
+		}
+		fmt.Println("Please type Y or N.")
+	}
 }
 
 // processFile always tries to write a report; it only writes the spatials
@@ -72,6 +95,33 @@ func processFile(path, desktop string) (string, string) {
 		return saveReport(res)
 	}
 
+	// Show the changes and ask before saving anything.
+	var picture []byte
+	if res.Moved == 0 {
+		fmt.Println("No points needed moving, so there is nothing to review.")
+	} else {
+		fmt.Println(res.Summary())
+		var err error
+		if picture, err = polysnap.RenderPreview(res); err != nil {
+			res.AddIssue("Could not draw the before/after picture: %v", err)
+			fmt.Println("Could not draw the before/after picture:", err)
+		} else {
+			tmp := filepath.Join(os.TempDir(), "Spatial Poly Snap")
+			preview := filepath.Join(tmp, folder+" - Changes Preview.png")
+			if os.MkdirAll(tmp, 0o755) == nil && os.WriteFile(preview, picture, 0o644) == nil {
+				openFile(preview)
+				fmt.Println("A top-down before/after picture of the changes has opened:")
+				fmt.Println("  " + preview)
+			}
+		}
+		if len(res.Issues) > 0 {
+			fmt.Printf("%d issue(s) will be listed in the report.\n", len(res.Issues))
+		}
+		if !confirm("Export these changes? Type Y to export or N to cancel: ") {
+			return "", "Cancelled. Nothing was saved for " + filepath.Base(path) + "."
+		}
+	}
+
 	if err := os.MkdirAll(outDir, 0o755); err != nil {
 		return "", "Could not create output folder: " + err.Error()
 	}
@@ -88,6 +138,11 @@ func processFile(path, desktop string) (string, string) {
 		res.Snapped, res.Minified = nil, nil
 		res.Failed = "FAILED to write output. See the report."
 		return saveReport(res)
+	}
+	if picture != nil {
+		if err := os.WriteFile(filepath.Join(outDir, folder+" - Changes.png"), picture, 0o644); err != nil {
+			res.AddIssue("Could not save the before/after picture: %v", err)
+		}
 	}
 	if res.Minified != nil {
 		if err := os.WriteFile(miniPath, res.Minified, 0o644); err != nil {

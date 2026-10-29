@@ -112,7 +112,7 @@ func priorityAlign(vols []volume, pts []point, rep *report) (cornerSnaps, edgeSn
 					already++
 					continue
 				}
-				p.newX, p.newZ, p.moved = pl.nx, pl.nz, true
+				p.newX, p.newZ, p.moved, p.how, p.onto = pl.nx, pl.nz, true, 1, fmt.Sprintf("%s pt %d", vols[pl.vol].name, pts[pl.target].idx+1)
 				cornerSnaps++
 				rep.snapped = append(rep.snapped, fmt.Sprintf("%s pt %d -> %s pt %d (%s, %s), moved %.4fm",
 					v.name, p.idx+1, vols[pl.vol].name, pts[pl.target].idx+1, formatNum(pl.nx), formatNum(pl.nz), pl.d))
@@ -137,7 +137,7 @@ func priorityAlign(vols []volume, pts []point, rep *report) (cornerSnaps, edgeSn
 						label, snapDistance, vols[pts[clash].vol].name, pts[clash].idx+1)
 					continue
 				}
-				p.newX, p.newZ, p.moved = pl.nx, pl.nz, true
+				p.newX, p.newZ, p.moved, p.how, p.onto = pl.nx, pl.nz, true, 2, fmt.Sprintf("%s edge %d-%d", w.name, pl.edgeK+1, (pl.edgeK+1)%len(w.pts)+1)
 				edgeSnaps++
 				rep.tJunction = append(rep.tJunction, fmt.Sprintf("%s, moved %.4fm to (%s, %s)", label, pl.d, formatNum(pl.nx), formatNum(pl.nz)))
 			}

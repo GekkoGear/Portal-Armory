@@ -15,6 +15,11 @@ folder named after the spatial on your Desktop containing:
 | `<name>.spatial.json` | Your spatial with the polygon volume points lined up |
 | `<name>.spatial.minified.json` | The same file minified - upload this one to Portal |
 | `<name> - Snap Report.txt` | What changed, and anything you should fix by hand |
+| `<name> - Changes.png` | Top-down before/after picture of every change |
+
+**Review before export.** Before anything is saved, a top-down before/after picture opens: the
+whole map with every changed spot numbered, then a close-up (before | after) of each spot. The
+exe then asks `Export these changes?` - type Y to save, N to cancel (nothing is written).
 
 **How points are lined up.** Volumes are handled top-down in file (scene tree) order. The first
 volume never moves. Each later volume's points move onto the closest corner of a volume above it
@@ -49,5 +54,6 @@ go test ./...
 res := polysnap.Process(data, "Map.spatial.json")
 if res.Snapped == nil { /* res.Failed says why; res.ReportText() explains */ }
 // res.Snapped, res.Minified, res.Summary(), res.Sections(), res.ReportText()
+png, _ := polysnap.RenderPreview(res) // before/after picture; res.Shapes / res.Changes hold the raw geometry
 folder, snappedName, minifiedName, reportName := polysnap.OutputNames("Map.spatial.json")
 ```
