@@ -40,7 +40,18 @@ func desktopDir() string {
 	return filepath.Join(home, "Desktop")
 }
 
-// openFile shows a file with its default Windows app (e.g. Photos for a PNG).
+// openFile shows a file with its default Windows app (e.g. Photos for a PNG),
+// the same as double-clicking it. Falls back to Explorer if that fails.
 func openFile(path string) {
-	exec.Command("rundll32", "url.dll,FileProtocolHandler", path).Start()
+	shell32 := syscall.NewLazyDLL("shell32.dll")
+	exe := shell32.NewProc("ShellExecuteW")
+	if exe.Find() == nil {
+		verb, _ := syscall.UTF16PtrFromString("open")
+		file, _ := syscall.UTF16PtrFromString(path)
+		r, _, _ := exe.Call(0, uintptr(unsafe.Pointer(verb)), uintptr(unsafe.Pointer(file)), 0, 0, 1) // SW_SHOWNORMAL
+		if r > 32 {
+			return
+		}
+	}
+	exec.Command("explorer.exe", path).Start()
 }

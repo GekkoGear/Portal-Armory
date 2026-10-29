@@ -23,24 +23,89 @@ import (
 )
 
 func main() {
-	args := os.Args[1:]
-	if len(args) == 0 {
-		fmt.Println("Spatial Poly Snap v" + polysnap.Version)
-		fmt.Println("Drag a .spatial.json file (or several) onto this exe to snap polygon volume points.")
-		fmt.Println("Results go to a folder named after the spatial on your Desktop.")
+	fmt.Println("Spatial Poly Snap v" + polysnap.Version)
+	desktop := desktopDir()
+	run := func(paths []string) {
+		for _, path := range paths {
+			fmt.Printf("\nProcessing: %s\n", filepath.Base(path))
+			outDir, summary := processFile(path, desktop)
+			fmt.Println(summary)
+			if outDir != "" {
+				fmt.Printf("Saved to: %s\n", outDir)
+			}
+		}
+	}
+
+	// Files dropped onto the exe's icon.
+	if args := os.Args[1:]; len(args) > 0 {
+		run(args)
 		pause()
 		return
 	}
-	desktop := desktopDir()
-	for _, path := range args {
-		fmt.Printf("\nProcessing: %s\n", filepath.Base(path))
-		outDir, summary := processFile(path, desktop)
-		fmt.Println(summary)
-		if outDir != "" {
-			fmt.Printf("Saved to: %s\n", outDir)
+
+	// Opened on its own: let the user drag files into this window.
+	fmt.Println("Results go to a folder named after the spatial on your Desktop.")
+	for {
+		fmt.Print("\nDrag a .spatial.json file (or several) into this window and press Enter.\n(Press Enter on an empty line to close.)\n> ")
+		line, err := stdin.ReadString('\n')
+		paths := splitPaths(line)
+		if len(paths) == 0 {
+			if err == nil && strings.TrimSpace(line) != "" {
+				fmt.Println("That didn't look like a file path.")
+				continue
+			}
+			return
+		}
+		run(paths)
+		if err != nil {
+			return
 		}
 	}
-	pause()
+}
+
+// splitPaths reads the text Windows types in when files are dragged into a
+// console window: one or more paths, each quoted if it has spaces. It also
+// accepts PowerShell's  & 'C:\path'  form and single quotes.
+func splitPaths(line string) []string {
+	line = strings.TrimSpace(line)
+	line = strings.TrimPrefix(line, "& ")
+	orig := strings.Trim(strings.TrimSpace(line), `"'`)
+	var out []string
+	for len(line) > 0 {
+		line = strings.TrimLeft(line, " \t")
+		if line == "" {
+			break
+		}
+		var p string
+		if q := line[0]; q == '"' || q == '\'' {
+			end := strings.IndexByte(line[1:], q)
+			if end < 0 {
+				p, line = line[1:], ""
+			} else {
+				p, line = line[1:1+end], line[2+end:]
+			}
+		} else {
+			end := strings.IndexAny(line, " \t")
+			if end < 0 {
+				p, line = line, ""
+			} else {
+				p, line = line[:end], line[end:]
+			}
+		}
+		if p != "" {
+			out = append(out, p)
+		}
+	}
+	// A path with spaces pasted without quotes: if the pieces don't exist on
+	// their own but the whole line does, use the whole line.
+	if len(out) > 1 {
+		if _, err := os.Stat(out[0]); err != nil {
+			if _, err := os.Stat(orig); err == nil {
+				return []string{orig}
+			}
+		}
+	}
+	return out
 }
 
 var stdin = bufio.NewReader(os.Stdin)
