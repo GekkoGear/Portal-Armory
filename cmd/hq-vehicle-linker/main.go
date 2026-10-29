@@ -1,6 +1,6 @@
-// HQ Vehicle Linker: drag a .spatial.json onto the .exe. Every vehicle
-// spawner inside an HQ's HQArea polygon is added to that HQ's
-// VehicleSpawners list. The original file is never changed; the result goes
+// HQ Vehicle Linker: drag a .spatial.json onto the .exe. For each HQ it
+// lists the vehicle spawners inside the HQ's HQArea polygon as a ticked
+// checklist; the ticked ones are added to that HQ's VehicleSpawners list. The original file is never changed; the result goes
 // to a Desktop folder named after the spatial, with a report.
 package main
 
@@ -16,14 +16,15 @@ import (
 )
 
 func main() {
-	code := run(os.Args[1:], desktopDir(), os.Stdout)
+	stdin := bufio.NewReader(os.Stdin)
+	code := run(os.Args[1:], desktopDir(), stdin, os.Stdout)
 	fmt.Println()
 	fmt.Println("Press Enter to close.")
-	bufio.NewReader(os.Stdin).ReadString('\n')
+	stdin.ReadString('\n')
 	os.Exit(code)
 }
 
-func run(args []string, desktop string, out io.Writer) int {
+func run(args []string, desktop string, stdin *bufio.Reader, out io.Writer) int {
 	say := func(format string, a ...any) { fmt.Fprintf(out, format+"\n", a...) }
 	say("HQ Vehicle Linker v" + hqlink.Version)
 	say("")
@@ -37,13 +38,23 @@ func run(args []string, desktop string, out io.Writer) int {
 		say("Couldn't read %s: %v", in, err)
 		return 1
 	}
-	result, rep, err := hqlink.Link(data)
+	found, err := hqlink.Find(data)
 	if err != nil {
 		if errors.Is(err, hqlink.ErrNotSpatial) {
 			say("%s is not a spatial file (no Portal_Dynamic list found).", filepath.Base(in))
 		} else {
 			say("Couldn't process %s: %v", filepath.Base(in), err)
 		}
+		return 1
+	}
+	pick := map[string][]string{}
+	if found.FoundCount() > 0 {
+		say("Untick anything you don't want added. Spawners already in an HQ's list aren't shown.")
+		pick = askPicks(found, stdin, out)
+	}
+	result, rep, err := hqlink.Apply(data, pick)
+	if err != nil {
+		say("Couldn't process %s: %v", filepath.Base(in), err)
 		return 1
 	}
 
@@ -72,14 +83,14 @@ func run(args []string, desktop string, out io.Writer) int {
 
 	say("")
 	for _, h := range rep.HQs {
-		name := h.Name
-		if name == "" {
-			name = h.ID
-		}
+		name := hqLabel(h)
 		if h.Status == hqlink.Added {
 			extra := ""
 			if h.CreatedList {
-				extra = " (new vehicle list created)"
+				extra = ", new vehicle list created"
+			}
+			if len(h.NotPicked) > 0 {
+				extra += fmt.Sprintf(", %d not picked", len(h.NotPicked))
 			}
 			say("  %s: +%d added%s", name, len(h.Added), extra)
 		} else {

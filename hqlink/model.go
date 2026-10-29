@@ -18,8 +18,8 @@ type hq struct {
 }
 
 type spawner struct {
-	ID   string
-	X, Z float64
+	ID, VehicleType string
+	X, Z            float64
 }
 
 type spatial struct {
@@ -31,6 +31,7 @@ type spatial struct {
 
 type rawObj struct {
 	Type            string                   `json:"type"`
+	VehicleType     string                   `json:"VehicleType"`
 	ID              string                   `json:"id"`
 	Name            string                   `json:"name"`
 	HQArea          string                   `json:"HQArea"`
@@ -70,7 +71,7 @@ func parseSpatial(b []byte) (spatial, error) {
 			s.HQs = append(s.HQs, h)
 		case "VehicleSpawner":
 			if r.Position != nil && r.ID != "" {
-				s.Spawners = append(s.Spawners, spawner{ID: r.ID, X: r.Position.X, Z: r.Position.Z})
+				s.Spawners = append(s.Spawners, spawner{ID: r.ID, VehicleType: r.VehicleType, X: r.Position.X, Z: r.Position.Z})
 			}
 		case "PolygonVolume":
 			pts := make([]Point, len(r.Points))

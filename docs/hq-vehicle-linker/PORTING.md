@@ -2,11 +2,14 @@
 
 The `hqlink` package is the whole tool. It has no file, console or UI code.
 
-**One call:**
+**Two calls (checklist):**
 
 ```go
-out, rep, err := hqlink.Link(spatialBytes)
+rep, err := hqlink.Find(spatialBytes)          // rep.HQs[i].Found = the checklist (SpawnerID, VehicleType)
+out, rep, err := hqlink.Apply(spatialBytes, pick) // pick: HQ ID -> spawner IDs that stay ticked
 ```
+
+`rep.PickAll()` gives an all-ticked pick; `hqlink.Link(b)` is Find + Apply(all).
 
 - `out` – the updated spatial (identical bytes to the input when `rep.Changed` is false).
 - `rep` – `hqlink.Report`: one `HQResult` per HQ (Status, Added, AlreadyLinked,
@@ -16,7 +19,7 @@ out, rep, err := hqlink.Link(spatialBytes)
 `rep.Text(fileName)` gives the same plain-text report the .exe writes.
 
 **In Armory:** `hqlink` already lives in this repo (`github.com/GekkoGear/portal-armory/hqlink`).
-The Portal Finalization tab calls `Link` next to Spatial Poly Snap's `polysnap.Process`, and
+The Portal Finalization tab calls `Find`, shows each HQ's `Found` list as ticked checkboxes, then `Apply`, next to Spatial Poly Snap's `polysnap.Process`, and
 uses `hqlink.OutputNames` for folder/file names. Render the `Report` fields in the web view (or show `Text()`),
 and save `out` using Armory's normal output-folder rules.
 

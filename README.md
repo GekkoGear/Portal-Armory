@@ -39,7 +39,9 @@ Everything runs offline.
 
 Drag a `.spatial.json` onto `HQ Vehicle Linker.exe`. For every HQ, it finds the vehicle spawners
 inside the HQ's `HQArea` polygon (seen from above - height is ignored) and adds them to that HQ's
-`VehicleSpawners` list, so they show on that HQ in the deploy menu. Results go to a
+`VehicleSpawners` list, so they show on that HQ in the deploy menu. Before anything is added it shows
+each HQ's newly found spawners as a ticked checklist (with vehicle types) - untick any you don't want
+by typing their numbers (`3`, `5-8`, `N` for none), then press Enter. Results go to a
 `<name> - HQ Vehicles` folder on your Desktop:
 
 | File | What it is |
@@ -78,7 +80,8 @@ folder, snappedName, minifiedName, reportName := polysnap.OutputNames("Map.spati
 ```
 
 ```go
-out, rep, err := hqlink.Link(data)      // err wraps hqlink.ErrNotSpatial for non-spatials
+found, err := hqlink.Find(data)         // found.HQs[i].Found is the checklist; err wraps hqlink.ErrNotSpatial
+out, rep, err := hqlink.Apply(data, pick) // pick: HQ ID -> ticked spawner IDs (found.PickAll() = everything)
 // out is identical to data when !rep.Changed; rep.HQs, rep.Overlaps, rep.AddedCount(), rep.Text(name)
 folder, spatialName, reportName := hqlink.OutputNames("Map.spatial.json")
 ```

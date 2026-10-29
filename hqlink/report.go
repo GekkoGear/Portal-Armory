@@ -15,11 +15,12 @@ func (r Report) Text(inputName string) string {
 	line("HQ Vehicle Linker report - %s", inputName)
 	line("")
 	for _, h := range r.HQs {
-		name := h.Name
-		if name == "" {
-			name = "(no name)"
+		switch {
+		case h.Name == "" || h.Name == h.ID:
+			line("%s", h.ID)
+		default:
+			line("%s  (%s)", h.Name, h.ID)
 		}
-		line("%s  (%s)", name, h.ID)
 		line("  Polygon: %s", orNone(h.AreaID))
 		line("  Result: %s", h.Status)
 		if h.CreatedList {
@@ -38,6 +39,7 @@ func (r Report) Text(inputName string) string {
 			}
 		}
 		list("Added", h.Added)
+		list("Found but not picked", h.NotPicked)
 		list("Already linked", h.AlreadyLinked)
 		line("")
 	}
