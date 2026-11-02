@@ -1,0 +1,404 @@
+{
+    "Portal_Dynamic": [
+        {
+            "name": "Cam",
+            "type": "DeployCam",
+            "id": "Cam"
+        },
+        {
+            "name": "HQ_A",
+            "AltTeam": "TeamNeutral",
+            "ObjId": 1,
+            "InfantrySpawns": [
+                "HQ_A/S1",
+                "HQ_A/S2"
+            ],
+            "VehicleSpawners": [
+                "VA1"
+            ],
+            "HQArea": "PolyA",
+            "type": "HQ_PlayerSpawner",
+            "position": {
+                "x": 0,
+                "y": 0,
+                "z": 0
+            },
+            "id": "HQ_A",
+            "linked": [
+                "HQArea",
+                "InfantrySpawns",
+                "VehicleSpawners"
+            ]
+        },
+        {
+            "name": "HQ_B",
+            "AltTeam": "TeamNeutral",
+            "ObjId": 1,
+            "InfantrySpawns": [
+                "HQ_B/S1"
+            ],
+            "HQArea": "PolyB",
+            "type": "HQ_PlayerSpawner",
+            "position": {
+                "x": 0,
+                "y": 0,
+                "z": 0
+            },
+            "id": "HQ_B",
+            "linked": [
+                "HQArea",
+                "InfantrySpawns"
+            ]
+        },
+        {
+            "name": "HQ_Share",
+            "AltTeam": "TeamNeutral",
+            "ObjId": 1,
+            "InfantrySpawns": [
+                "HQ_Share/S1"
+            ],
+            "HQArea": "PolyB",
+            "type": "HQ_PlayerSpawner",
+            "position": {
+                "x": 0,
+                "y": 0,
+                "z": 0
+            },
+            "id": "HQ_Share",
+            "linked": [
+                "HQArea",
+                "InfantrySpawns"
+            ]
+        },
+        {
+            "name": "HQ_Empty",
+            "AltTeam": "TeamNeutral",
+            "ObjId": 1,
+            "InfantrySpawns": [
+                "HQ_Empty/S1"
+            ],
+            "VehicleSpawners": [],
+            "HQArea": "PolyE",
+            "type": "HQ_PlayerSpawner",
+            "position": {
+                "x": 0,
+                "y": 0,
+                "z": 0
+            },
+            "id": "HQ_Empty",
+            "linked": [
+                "HQArea",
+                "InfantrySpawns",
+                "VehicleSpawners"
+            ]
+        },
+        {
+            "name": "HQ_EmptyList",
+            "AltTeam": "TeamNeutral",
+            "ObjId": 1,
+            "InfantrySpawns": [
+                "HQ_EmptyList/S1"
+            ],
+            "VehicleSpawners": [],
+            "HQArea": "PolyC",
+            "type": "HQ_PlayerSpawner",
+            "position": {
+                "x": 0,
+                "y": 0,
+                "z": 0
+            },
+            "id": "HQ_EmptyList",
+            "linked": [
+                "HQArea",
+                "InfantrySpawns",
+                "VehicleSpawners"
+            ]
+        },
+        {
+            "name": "HQ_NoArea",
+            "AltTeam": "TeamNeutral",
+            "ObjId": 1,
+            "InfantrySpawns": [
+                "X"
+            ],
+            "VehicleSpawners": [
+                "VA1"
+            ],
+            "type": "HQ_PlayerSpawner",
+            "position": {
+                "x": 0,
+                "y": 0,
+                "z": 0
+            },
+            "id": "HQ_NoArea",
+            "linked": [
+                "InfantrySpawns",
+                "VehicleSpawners"
+            ]
+        },
+        {
+            "name": "HQ_BadArea",
+            "AltTeam": "TeamNeutral",
+            "ObjId": 1,
+            "InfantrySpawns": [
+                "X"
+            ],
+            "VehicleSpawners": [
+                "VA1"
+            ],
+            "HQArea": "Missing/Poly",
+            "type": "HQ_PlayerSpawner",
+            "position": {
+                "x": 0,
+                "y": 0,
+                "z": 0
+            },
+            "id": "HQ_BadArea",
+            "linked": [
+                "HQArea",
+                "InfantrySpawns",
+                "VehicleSpawners"
+            ]
+        },
+        {
+            "name": "AreaTrigger",
+            "type": "AreaTrigger",
+            "Area": "PolyA",
+            "id": "Trig",
+            "linked": [
+                "Area"
+            ]
+        },
+        {
+            "name": "PolyA",
+            "type": "PolygonVolume",
+            "id": "PolyA",
+            "height": 0,
+            "points": [
+                {
+                    "x": 0,
+                    "y": 10,
+                    "z": 0
+                },
+                {
+                    "x": 100,
+                    "y": 10,
+                    "z": 0
+                },
+                {
+                    "x": 100,
+                    "y": 10,
+                    "z": 100
+                },
+                {
+                    "x": 0,
+                    "y": 10,
+                    "z": 100
+                }
+            ]
+        },
+        {
+            "name": "PolyB",
+            "type": "PolygonVolume",
+            "id": "PolyB",
+            "height": 0,
+            "points": [
+                {
+                    "x": 200,
+                    "y": 10,
+                    "z": 200
+                },
+                {
+                    "x": 300,
+                    "y": 10,
+                    "z": 200
+                },
+                {
+                    "x": 300,
+                    "y": 10,
+                    "z": 300
+                },
+                {
+                    "x": 200,
+                    "y": 10,
+                    "z": 300
+                }
+            ]
+        },
+        {
+            "name": "PolyC",
+            "type": "PolygonVolume",
+            "id": "PolyC",
+            "height": 0,
+            "points": [
+                {
+                    "x": 500,
+                    "y": 10,
+                    "z": 500
+                },
+                {
+                    "x": 600,
+                    "y": 10,
+                    "z": 500
+                },
+                {
+                    "x": 600,
+                    "y": 10,
+                    "z": 600
+                },
+                {
+                    "x": 500,
+                    "y": 10,
+                    "z": 600
+                }
+            ]
+        },
+        {
+            "name": "PolyE",
+            "type": "PolygonVolume",
+            "id": "PolyE",
+            "height": 0,
+            "points": [
+                {
+                    "x": 1000,
+                    "y": 10,
+                    "z": 1000
+                },
+                {
+                    "x": 1100,
+                    "y": 10,
+                    "z": 1000
+                },
+                {
+                    "x": 1100,
+                    "y": 10,
+                    "z": 1100
+                },
+                {
+                    "x": 1000,
+                    "y": 10,
+                    "z": 1100
+                }
+            ]
+        },
+        {
+            "name": "VA1",
+            "VehicleType": "Abrams",
+            "type": "VehicleSpawner",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "position": {
+                "x": 50,
+                "y": 10,
+                "z": 50
+            },
+            "id": "VA1"
+        },
+        {
+            "name": "VA2",
+            "VehicleType": "Abrams",
+            "type": "VehicleSpawner",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "position": {
+                "x": 60,
+                "y": 10,
+                "z": 60
+            },
+            "id": "VA2"
+        },
+        {
+            "name": "VB1",
+            "VehicleType": "Abrams",
+            "type": "VehicleSpawner",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "position": {
+                "x": 250,
+                "y": 10,
+                "z": 250
+            },
+            "id": "VB1"
+        },
+        {
+            "name": "VB2",
+            "VehicleType": "Abrams",
+            "type": "VehicleSpawner",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "position": {
+                "x": 260,
+                "y": 10,
+                "z": 260
+            },
+            "id": "VB2"
+        },
+        {
+            "name": "Veh & \"Boat\" é",
+            "VehicleType": "RHIB",
+            "type": "VehicleSpawner",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "position": {
+                "x": 270,
+                "y": 10,
+                "z": 270
+            },
+            "id": "Veh & \"Boat\" é"
+        },
+        {
+            "name": "VC1",
+            "VehicleType": "Abrams",
+            "type": "VehicleSpawner",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "position": {
+                "x": 550,
+                "y": 10,
+                "z": 550
+            },
+            "id": "VC1"
+        },
+        {
+            "name": "VOut",
+            "VehicleType": "Abrams",
+            "type": "VehicleSpawner",
+            "right": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "position": {
+                "x": 5000,
+                "y": 10,
+                "z": 5000
+            },
+            "id": "VOut"
+        }
+    ],
+    "Static": [
+        {
+            "name": "Terrain",
+            "type": "Terrain",
+            "id": "T"
+        }
+    ]
+}
