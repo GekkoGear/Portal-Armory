@@ -23,12 +23,11 @@ const REPO := "GekkoGear/portal-armory"
 const TAG_PREFIX := "polysnap-rev"
 const PLUGIN_NAME := "PolySnap"
 ## Earlier name of this add-on; installs that still carry it can be updated too.
-const OLD_NAMES := ["Portal Polygons"]
-const ZIP_FOLDER := "portal_polygons/"
+const ZIP_FOLDER := "polysnap/"
 ## Files of versions that came before manifest.txt existed.
-const KNOWN_FILES := ["README.md", "align.gd", "panel.gd", "plugin.cfg", "plugin.gd", "snap3d.gd", "view.gd", "updater.gd", "tab_icon.gd", "manifest.txt"]
-const DOWNLOAD_PATH := "user://portal_polygons_update.zip"
-const BACKUP_DIR := "user://portal_polygons_backup"
+const KNOWN_FILES := ["README.md", "manifest.txt", "plugin.cfg", "polysnap_align.gd", "polysnap_panel.gd", "polysnap_plugin.gd", "polysnap_point_snap.gd", "polysnap_tab_icon.gd", "polysnap_updater.gd", "polysnap_view.gd"]
+const DOWNLOAD_PATH := "user://polysnap_update.zip"
+const BACKUP_DIR := "user://polysnap_backup"
 
 var plugin: EditorPlugin = null
 ## Tests point this at a local server instead of GitHub.
@@ -104,9 +103,9 @@ static func pick_release(releases) -> Dictionary:
 static func read_installed(folder: String) -> Dictionary:
 	var cfg := ConfigFile.new()
 	if cfg.load(folder.path_join("plugin.cfg")) != OK:
-		return {"ok": false, "error": "There's no plugin.cfg in that folder. Pick your project's addons/portal_polygons folder."}
+		return {"ok": false, "error": "There's no plugin.cfg in that folder. Pick your project's addons/polysnap folder."}
 	var nm := str(cfg.get_value("plugin", "name", ""))
-	if nm != PLUGIN_NAME and not OLD_NAMES.has(nm):
+	if nm != PLUGIN_NAME:
 		return {"ok": false, "error": "That folder holds a different add-on (%s), not PolySnap. Nothing was changed." % str(cfg.get_value("plugin", "name", "?"))}
 	var ver := _clean(str(cfg.get_value("plugin", "version", "")))
 	if not _is_version(ver):
@@ -115,7 +114,7 @@ static func read_installed(folder: String) -> Dictionary:
 
 
 ## Opens and checks a downloaded zip. Everything must sit directly inside a
-## portal_polygons/ folder (no sub-folders, no ".." tricks), and its plugin.cfg
+## polysnap/ folder (no sub-folders, no ".." tricks), and its plugin.cfg
 ## must be PolySnap at the expected version.
 ## { ok, files: { name: PackedByteArray }, error }
 static func read_zip(zip_path: String, expect_version: String) -> Dictionary:
@@ -131,18 +130,21 @@ static func read_zip(zip_path: String, expect_version: String) -> Dictionary:
 			return {"ok": false, "error": "The download has an unexpected folder (%s). Nothing was changed." % entry}
 		if not entry.begins_with(ZIP_FOLDER):
 			z.close()
-			return {"ok": false, "error": "The download has a file outside portal_polygons (%s). Nothing was changed." % entry}
+			return {"ok": false, "error": "The download has a file outside polysnap (%s). Nothing was changed." % entry}
 		var name := entry.trim_prefix(ZIP_FOLDER)
 		if name == "" or name.contains("/") or name.contains("\\") or name.contains("..") or name.begins_with("."):
 			z.close()
 			return {"ok": false, "error": "The download has an unexpected file name (%s). Nothing was changed." % entry}
 		files[name] = z.read_file(entry)
 	z.close()
-	if not files.has("plugin.cfg") or not files.has("plugin.gd"):
-		return {"ok": false, "error": "The download is missing plugin.cfg or plugin.gd. Nothing was changed."}
+	if not files.has("plugin.cfg"):
+		return {"ok": false, "error": "The download is missing plugin.cfg. Nothing was changed."}
 	var cfg := ConfigFile.new()
 	if cfg.parse(files["plugin.cfg"].get_string_from_utf8()) != OK or str(cfg.get_value("plugin", "name", "")) != PLUGIN_NAME:
 		return {"ok": false, "error": "The download isn't PolySnap. Nothing was changed."}
+	var script_file := str(cfg.get_value("plugin", "script", ""))
+	if script_file == "" or not files.has(script_file):
+		return {"ok": false, "error": "The download is missing its main script (%s). Nothing was changed." % script_file}
 	var ver := str(cfg.get_value("plugin", "version", ""))
 	if expect_version != "" and compare_versions(ver, expect_version) != 0:
 		return {"ok": false, "error": "The download says it is Rev %s, but the release is Rev %s. Nothing was changed." % [ver, expect_version]}
@@ -220,14 +222,14 @@ func _build() -> void:
 	box.custom_minimum_size = Vector2(560, 0)
 	_dialog.add_child(box)
 	var info := Label.new()
-	info.text = "Checks GitHub for a newer PolySnap and installs it into this folder.\nThis is the only time the add-on goes online. Drag your portal_polygons folder here, or press Browse."
+	info.text = "Checks GitHub for a newer PolySnap and installs it into this folder.\nThis is the only time the add-on goes online. Drag your polysnap folder here, or press Browse."
 	info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	box.add_child(info)
 	var row := HBoxContainer.new()
 	box.add_child(row)
 	_path = LineEdit.new()
 	_path.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_path.placeholder_text = "Path to your addons/portal_polygons folder"
+	_path.placeholder_text = "Path to your addons/polysnap folder"
 	_path.text_changed.connect(_on_path_changed)
 	row.add_child(_path)
 	var browse := Button.new()
@@ -245,7 +247,7 @@ func _build() -> void:
 	_browse_dialog = ClassDB.instantiate("EditorFileDialog")
 	_browse_dialog.file_mode = 2   # open a folder
 	_browse_dialog.access = 2      # anywhere on the computer
-	_browse_dialog.title = "Pick your portal_polygons folder"
+	_browse_dialog.title = "Pick your polysnap folder"
 	_browse_dialog.dir_selected.connect(_set_folder)
 	add_child(_browse_dialog)
 

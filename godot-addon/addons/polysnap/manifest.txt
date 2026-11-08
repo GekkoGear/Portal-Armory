@@ -1,12 +1,12 @@
 # PolySnap files. The updater only ever deletes or replaces the files listed here
 # (and the .uid files Godot makes next to them), inside this folder.
 README.md
-align.gd
+polysnap_align.gd
 manifest.txt
-panel.gd
+polysnap_panel.gd
 plugin.cfg
-plugin.gd
-snap3d.gd
-updater.gd
-tab_icon.gd
-view.gd
+polysnap_plugin.gd
+polysnap_point_snap.gd
+polysnap_updater.gd
+polysnap_tab_icon.gd
+polysnap_view.gd

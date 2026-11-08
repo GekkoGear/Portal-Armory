@@ -2,9 +2,9 @@
 extends EditorPlugin
 ## Adds a "PolySnap" tab next to 2D / 3D / Script.
 
-const PolygonsPanel = preload("panel.gd")
-const PointSnap = preload("snap3d.gd")
-const TabIcon = preload("tab_icon.gd")
+const PolySnapPanel = preload("polysnap_panel.gd")
+const PointSnap = preload("polysnap_point_snap.gd")
+const TabIcon = preload("polysnap_tab_icon.gd")
 
 var _panel = null
 var _snap = null
@@ -13,7 +13,7 @@ var _tab_icon = null
 
 
 func _enter_tree() -> void:
-	_panel = PolygonsPanel.new()
+	_panel = PolySnapPanel.new()
 	_panel.plugin = self
 	_panel.load_colors()
 	get_editor_interface().get_editor_main_screen().add_child(_panel)

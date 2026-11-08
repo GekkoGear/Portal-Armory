@@ -11,8 +11,8 @@ Fully offline.
 
 ## Install
 
-1. Copy the `portal_polygons` folder into your project's `addons` folder, so you have
-   `GodotProject/addons/portal_polygons/plugin.cfg`.
+1. Copy the `polysnap` folder into your project's `addons` folder, so you have
+   `GodotProject/addons/polysnap/plugin.cfg`.
 2. In Godot: **Project > Project Settings > Plugins**, tick **Enabled** next to
    *PolySnap*. (Godot asks for this once per project.)
 3. A **PolySnap** tab appears at the top of the editor.
@@ -36,8 +36,8 @@ Open your map scene and click the **PolySnap** tab (its icon is your map).
 The **PolySnap** tab shows only an icon: the open map seen from above, with its play area
 (the CombatArea's CombatVolume) in white with 14 red points, Team 1's starting HQ in blue and
 Team 2's in orange. Its hover text says "PolySnap". Hover it and the HQs fade while the 14 points drag one after another into
-a "P"; move away and they drag back. With no map open it shows a fixed random shape. It
-updates when you open another scene.
+a "P"; move away and they drag back. With no map open it shows a fixed random shape. When you open a scene it waits for
+the map to finish loading (checking again every second, for up to 30 seconds) and then shows it.
 
 ## Which way up
 

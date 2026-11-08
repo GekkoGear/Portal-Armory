@@ -8,7 +8,7 @@ extends Node
 ## that corner (or, if no corner is that close, onto the closest edge). Pull away
 ## further and it follows the mouse again. Hold Alt to drag without snapping.
 
-const PolygonsPanel = preload("panel.gd")
+const PolySnapPanel = preload("polysnap_panel.gd")
 
 var plugin: EditorPlugin = null
 var enabled := true
@@ -70,10 +70,10 @@ func _load() -> void:
 	var es = _settings()
 	if es == null:
 		return
-	if es.has_setting("portal_polygons/point_snap/enabled"):
-		enabled = bool(es.get_setting("portal_polygons/point_snap/enabled"))
-	if es.has_setting("portal_polygons/point_snap/distance"):
-		distance = float(es.get_setting("portal_polygons/point_snap/distance"))
+	if es.has_setting("polysnap/point_snap/enabled"):
+		enabled = bool(es.get_setting("polysnap/point_snap/enabled"))
+	if es.has_setting("polysnap/point_snap/distance"):
+		distance = float(es.get_setting("polysnap/point_snap/distance"))
 	_toggle.set_pressed_no_signal(enabled)
 	_spin.set_value_no_signal(distance)
 	_spin.editable = enabled
@@ -83,8 +83,8 @@ func _save() -> void:
 	var es = _settings()
 	if es == null:
 		return
-	es.set_setting("portal_polygons/point_snap/enabled", enabled)
-	es.set_setting("portal_polygons/point_snap/distance", distance)
+	es.set_setting("polysnap/point_snap/enabled", enabled)
+	es.set_setting("polysnap/point_snap/distance", distance)
 
 
 func _on_toggled(on: bool) -> void:
@@ -121,7 +121,7 @@ func _selected_volume() -> Node3D:
 	if sel.size() != 1:
 		return null
 	var n: Node = sel[0]
-	return n if PolygonsPanel._is_polygon_volume(n) else null
+	return n if PolySnapPanel._is_polygon_volume(n) else null
 
 
 func _process(_delta: float) -> void:
@@ -197,7 +197,7 @@ func _gather(node: Node3D) -> void:
 	var stack: Array = [root]
 	while not stack.is_empty():
 		var n: Node = stack.pop_back()
-		if n != node and PolygonsPanel._is_polygon_volume(n):
+		if n != node and PolySnapPanel._is_polygon_volume(n):
 			var xf: Transform3D = n.global_transform
 			var w := PackedVector2Array()
 			for p in n.points:

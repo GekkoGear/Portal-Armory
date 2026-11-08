@@ -11,7 +11,7 @@ extends Node
 ## Maps are drawn from above like Godot's 3D top view, turned by the same Rotate
 ## setting as the PolySnap tab (never mirrored).
 
-const PolygonsPanel = preload("panel.gd")
+const PolySnapPanel = preload("polysnap_panel.gd")
 
 ## The "P": one outline that goes in to trace the bowl's hole (16 x 16 icon grid).
 const P := [Vector2(3, 14), Vector2(3, 2), Vector2(9, 2), Vector2(12, 3.4), Vector2(13.2, 6), Vector2(12, 8.6), Vector2(9, 10),
@@ -53,7 +53,7 @@ func _find_button() -> Button:
 		return null
 	var base: Control = plugin.get_editor_interface().get_base_control()
 	for b in base.find_children("*", "Button", true, false):
-		if b.text == "PolySnap" or b.text == "Polygons" or b.get_meta("portal_polygons_tab", false):
+		if b.text == "PolySnap" or b.get_meta("polysnap_tab", false):
 			# main screen buttons are toggle buttons in the title bar
 			if b.toggle_mode:
 				return b
@@ -64,8 +64,14 @@ func _hook_button() -> void:
 	_button = _find_button()
 	if _button == null:
 		return
-	_button.set_meta("portal_polygons_tab", true)
-	_button.text = ""
+	_button.set_meta("polysnap_tab", true)
+	# Never change the button's text: Godot finds this tab by its text ("PolySnap")
+	# when it switches tabs or reloads the plugin. The text is only hidden: clipped
+	# to nothing and drawn see-through, so the tab shows just the icon.
+	_button.clip_text = true
+	_button.add_theme_font_size_override("font_size", 1)
+	for c in ["font_color", "font_hover_color", "font_pressed_color", "font_hover_pressed_color", "font_focus_color", "font_disabled_color", "font_outline_color"]:
+		_button.add_theme_color_override(c, Color(0, 0, 0, 0))
 	_button.tooltip_text = "PolySnap"
 	_button.expand_icon = false
 	# keep our colors: don't let the editor tint the icon when hovered or selected
@@ -106,7 +112,7 @@ func _world_xz(n: Node3D) -> PackedVector2Array:
 	var xf: Transform3D = n.global_transform
 	for p in n.get("points"):
 		var g: Vector3 = xf * Vector3(p.x, 0, p.y)
-		out.append(PolygonsPanel.rot(Vector2(g.x, g.z), _rotation()))
+		out.append(PolySnapPanel.rot(Vector2(g.x, g.z), _rotation()))
 	return out
 
 
@@ -114,8 +120,8 @@ func _rotation() -> int:
 	if plugin == null:
 		return 0
 	var es = plugin.get_editor_interface().get_editor_settings()
-	if es.has_setting("portal_polygons/view/rotation"):
-		return int(es.get_setting("portal_polygons/view/rotation")) % 4
+	if es.has_setting("polysnap/view/rotation"):
+		return int(es.get_setting("polysnap/view/rotation")) % 4
 	return 0
 
 
@@ -145,14 +151,14 @@ func _map_from_scene(root: Node) -> Dictionary:
 	for n in root.find_children("*", "", true, false):
 		if play == null and "CombatVolume" in n:
 			var v = _linked(n, "CombatVolume")
-			if v != null and PolygonsPanel._is_polygon_volume(v) and v.get("points").size() >= 3:
+			if v != null and PolySnapPanel._is_polygon_volume(v) and v.get("points").size() >= 3:
 				play = _world_xz(v)
 		if "HQArea" in n:
 			var team := 2 if int(n.get("Team")) == 2 else 1
 			if seen.has(team):
 				continue          # each team's first HQ in the scene = its starting HQ
 			var a = _linked(n, "HQArea")
-			if a != null and PolygonsPanel._is_polygon_volume(a) and a.get("points").size() >= 3:
+			if a != null and PolySnapPanel._is_polygon_volume(a) and a.get("points").size() >= 3:
 				seen[team] = true
 				hqs.append([team, _world_xz(a)])
 	if play == null:
@@ -357,7 +363,10 @@ static func _pts_attr(pts) -> String:
 ## Put the tab back the way Godot made it (when the add-on is turned off).
 func restore() -> void:
 	if _button != null and is_instance_valid(_button):
-		_button.text = "PolySnap"
+		_button.clip_text = false
+		_button.remove_theme_font_size_override("font_size")
+		for c in ["font_color", "font_hover_color", "font_pressed_color", "font_hover_pressed_color", "font_focus_color", "font_disabled_color", "font_outline_color"]:
+			_button.remove_theme_color_override(c)
 		for c in ["icon_normal_color", "icon_hover_color", "icon_pressed_color", "icon_hover_pressed_color", "icon_focus_color", "icon_disabled_color"]:
 			_button.remove_theme_color_override(c)
 		if _button.mouse_entered.is_connected(_on_enter):

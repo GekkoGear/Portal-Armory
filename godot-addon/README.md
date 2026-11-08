@@ -11,8 +11,8 @@ Fully offline.
 
 ## Install
 
-1. Copy the `portal_polygons` folder into your project's `addons` folder, so you have
-   `GodotProject/addons/portal_polygons/plugin.cfg`.
+1. Copy the `polysnap` folder into your project's `addons` folder, so you have
+   `GodotProject/addons/polysnap/plugin.cfg`.
 2. In Godot: **Project > Project Settings > Plugins**, tick **Enabled** next to
    *PolySnap*. (Godot asks for this once per project.)
 3. A **PolySnap** tab appears at the top of the editor.

@@ -4,9 +4,9 @@ extends Control
 ## a top-down BEFORE / AFTER of the proposed line-up, let the user keep, undo or
 ## drag each change, then write it all back to the scene in one undoable step.
 
-const Align = preload("align.gd")
-const MapView = preload("view.gd")
-const Updater = preload("updater.gd")
+const Align = preload("polysnap_align.gd")
+const MapView = preload("polysnap_view.gd")
+const Updater = preload("polysnap_updater.gd")
 
 const NEAR_MISS := 0.5
 
@@ -83,7 +83,7 @@ var _filling_tree := false
 
 
 func _init() -> void:
-	name = "PortalPolygons"
+	name = "PolySnapPanel"
 	size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_build_ui()
@@ -300,14 +300,14 @@ func load_colors() -> void:
 	if es == null:
 		return
 	for row in COLOR_ROWS:
-		var k: String = "portal_polygons/colors/" + row[0]
+		var k: String = "polysnap/colors/" + row[0]
 		if es.has_setting(k) and typeof(es.get_setting(k)) == TYPE_COLOR:
 			colors[row[0]] = es.get_setting(k)
 		_color_buttons[row[0]].color = colors[row[0]]
-	if es.has_setting("portal_polygons/view/rotation"):
-		view_rot = int(es.get_setting("portal_polygons/view/rotation")) % 4
+	if es.has_setting("polysnap/view/rotation"):
+		view_rot = int(es.get_setting("polysnap/view/rotation")) % 4
 	_rot_btn.text = "Rotate %d°" % (view_rot * 90)
-	var pk := "portal_polygons/colors/per_volume_outlines"
+	var pk := "polysnap/colors/per_volume_outlines"
 	if es.has_setting(pk):
 		per_volume_outlines = bool(es.get_setting(pk))
 	_per_volume_check.set_pressed_no_signal(per_volume_outlines)
@@ -319,8 +319,8 @@ func _save_colors() -> void:
 	if es == null:
 		return
 	for row in COLOR_ROWS:
-		es.set_setting("portal_polygons/colors/" + row[0], colors[row[0]])
-	es.set_setting("portal_polygons/colors/per_volume_outlines", per_volume_outlines)
+		es.set_setting("polysnap/colors/" + row[0], colors[row[0]])
+	es.set_setting("polysnap/colors/per_volume_outlines", per_volume_outlines)
 
 
 ## Change one color by name ("anchor", "off", "fixed", "manual", "undone", "outline").
@@ -390,7 +390,7 @@ func _on_rotate() -> void:
 	_rot_btn.text = "Rotate %d°" % (view_rot * 90)
 	var es = _settings()
 	if es != null:
-		es.set_setting("portal_polygons/view/rotation", view_rot)
+		es.set_setting("polysnap/view/rotation", view_rot)
 	fit_view()
 	if plugin != null and plugin.has_method("on_view_rotated"):
 		plugin.on_view_rotated()
