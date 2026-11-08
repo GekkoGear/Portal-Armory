@@ -1,7 +1,7 @@
 # Portal Polygons (Godot add-on)
 
 Lines up the PolygonVolume points in a Battlefield 6 Portal scene, right inside Godot.
-It adds a **Polygons** tab next to 2D / 3D / Script that shows a top-down BEFORE / AFTER of
+It adds a **Polygons** tab, and a **Point Snap** toggle to the 3D view, next to 2D / 3D / Script that shows a top-down BEFORE / AFTER of
 every proposed change. Keep, undo or drag each one, then press **Finalize** to write it
 into the scene. Ctrl+Z undoes it.
 
@@ -30,6 +30,16 @@ Open your map scene and click **Polygons**.
 | **Changes list** | Every change with its own keep box. Click a row to zoom to it. |
 | **Needs a look** | Problems, corners that are close but weren't snapped (10-50 cm), and corners sitting on the edge of a volume lower in the scene. Click to zoom. |
 | **Finalize** | Writes the AFTER positions into the scene as one step. Ctrl+Z undoes it. |
+
+## Point Snap (3D view)
+
+The 3D view's toolbar gets a **Point Snap** toggle and a distance box (0.25 m by default).
+With it on, drag a PolygonVolume point with the SDK's normal point handles: when it comes
+within the distance of a corner of another polygon volume it snaps onto it while you drag,
+or onto the closest edge if no corner is that close. A note next to the toggle says what it
+snapped to. Keep dragging past the distance and it lets go. Hold **Alt** to drag without
+snapping. Only points you drag with the mouse are snapped; undo/redo and values typed in the
+Inspector are left alone. The toggle and distance are remembered.
 
 Mouse wheel zooms. Right or middle drag (or left drag on empty space) pans. Both views move
 together.

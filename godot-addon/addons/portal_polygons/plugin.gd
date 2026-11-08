@@ -3,8 +3,11 @@ extends EditorPlugin
 ## Adds a "Polygons" tab next to 2D / 3D / Script.
 
 const PolygonsPanel = preload("panel.gd")
+const PointSnap = preload("snap3d.gd")
 
 var _panel = null
+var _snap = null
+var _snap_bar: Control = null
 
 
 func _enter_tree() -> void:
@@ -14,6 +17,12 @@ func _enter_tree() -> void:
 	get_editor_interface().get_editor_main_screen().add_child(_panel)
 	_make_visible(false)
 	scene_changed.connect(_on_scene_changed)
+	# Live point snapping toggle in the 3D view's toolbar.
+	_snap = PointSnap.new()
+	_snap.plugin = self
+	add_child(_snap)
+	_snap_bar = _snap.make_toolbar()
+	add_control_to_container(CONTAINER_SPATIAL_EDITOR_MENU, _snap_bar)
 
 
 func _exit_tree() -> void:
@@ -22,6 +31,13 @@ func _exit_tree() -> void:
 	if _panel != null:
 		_panel.queue_free()
 		_panel = null
+	if _snap_bar != null:
+		remove_control_from_container(CONTAINER_SPATIAL_EDITOR_MENU, _snap_bar)
+		_snap_bar.queue_free()
+		_snap_bar = null
+	if _snap != null:
+		_snap.queue_free()
+		_snap = null
 
 
 func _has_main_screen() -> bool:
