@@ -10,6 +10,7 @@ var _panel = null
 func _enter_tree() -> void:
 	_panel = PolygonsPanel.new()
 	_panel.plugin = self
+	_panel.load_colors()
 	get_editor_interface().get_editor_main_screen().add_child(_panel)
 	_make_visible(false)
 	scene_changed.connect(_on_scene_changed)

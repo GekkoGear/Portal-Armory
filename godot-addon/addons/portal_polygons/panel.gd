@@ -40,6 +40,21 @@ var change_keys: Array = []
 var cam_center := Vector2.ZERO
 var cam_zoom := 1.0
 var show_names := true
+
+# --- colors (saved in Editor Settings, so they stick across projects) ---
+const COLOR_ROWS := [
+	["anchor", "Anchor points (don't move)", Color(1, 1, 1)],
+	["off", "Off points (BEFORE, will move)", Color(1.0, 0.25, 0.25)],
+	["fixed", "Fixed points (AFTER, lined up)", Color(0.3, 0.9, 0.4)],
+	["manual", "Points you moved", Color(0.35, 0.75, 1.0)],
+	["undone", "Undone changes", Color(0.6, 0.6, 0.66)],
+	["outline", "Polygon outlines", Color(0.55, 0.75, 0.95)],
+]
+var colors := {}
+var per_volume_outlines := true
+var _color_buttons := {}
+var _per_volume_check: CheckBox
+var _colors_popup: PopupPanel
 var hover_key = null
 var _card_key = null
 var _card_hide := 0.0
@@ -111,6 +126,11 @@ func _build_ui() -> void:
 	names.button_pressed = true
 	names.toggled.connect(_on_names_toggled)
 	bar.add_child(names)
+	var col_btn := Button.new()
+	col_btn.text = "Colors"
+	col_btn.tooltip_text = "Pick the colors of anchor, off, fixed and other points, and the polygon outlines."
+	col_btn.pressed.connect(_open_colors)
+	bar.add_child(col_btn)
 	var spacer := Control.new()
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	bar.add_child(spacer)
@@ -209,7 +229,113 @@ func _build_ui() -> void:
 	_alert = AcceptDialog.new()
 	_alert.title = "Polygons"
 	add_child(_alert)
+	_build_colors_popup()
 	_update_status()
+
+
+func _build_colors_popup() -> void:
+	for row in COLOR_ROWS:
+		colors[row[0]] = row[2]
+	_colors_popup = PopupPanel.new()
+	add_child(_colors_popup)
+	var box := VBoxContainer.new()
+	_colors_popup.add_child(box)
+	var head := Label.new()
+	head.text = "Colors"
+	box.add_child(head)
+	var grid := GridContainer.new()
+	grid.columns = 2
+	grid.add_theme_constant_override("h_separation", 12)
+	box.add_child(grid)
+	for row in COLOR_ROWS:
+		var l := Label.new()
+		l.text = row[1]
+		grid.add_child(l)
+		var b := ColorPickerButton.new()
+		b.custom_minimum_size = Vector2(70, 26)
+		b.edit_alpha = false
+		b.color = row[2]
+		b.get_picker().picker_shape = ColorPicker.SHAPE_HSV_WHEEL
+		b.color_changed.connect(_on_color_changed.bind(row[0]))
+		grid.add_child(b)
+		_color_buttons[row[0]] = b
+	_per_volume_check = CheckBox.new()
+	_per_volume_check.text = "Give each polygon its own outline color"
+	_per_volume_check.button_pressed = true
+	_per_volume_check.toggled.connect(_on_per_volume_toggled)
+	box.add_child(_per_volume_check)
+	var reset := Button.new()
+	reset.text = "Reset colors"
+	reset.pressed.connect(_reset_colors)
+	box.add_child(reset)
+
+
+func _settings():
+	var ei = _ei()
+	return ei.get_editor_settings() if ei != null else null
+
+
+## Load saved colors. Called by the plugin once it is set up.
+func load_colors() -> void:
+	var es = _settings()
+	if es == null:
+		return
+	for row in COLOR_ROWS:
+		var k: String = "portal_polygons/colors/" + row[0]
+		if es.has_setting(k) and typeof(es.get_setting(k)) == TYPE_COLOR:
+			colors[row[0]] = es.get_setting(k)
+		_color_buttons[row[0]].color = colors[row[0]]
+	var pk := "portal_polygons/colors/per_volume_outlines"
+	if es.has_setting(pk):
+		per_volume_outlines = bool(es.get_setting(pk))
+	_per_volume_check.set_pressed_no_signal(per_volume_outlines)
+	_redraw()
+
+
+func _save_colors() -> void:
+	var es = _settings()
+	if es == null:
+		return
+	for row in COLOR_ROWS:
+		es.set_setting("portal_polygons/colors/" + row[0], colors[row[0]])
+	es.set_setting("portal_polygons/colors/per_volume_outlines", per_volume_outlines)
+
+
+## Change one color by name ("anchor", "off", "fixed", "manual", "undone", "outline").
+func set_color(which: String, c: Color) -> void:
+	colors[which] = c
+	if _color_buttons.has(which):
+		_color_buttons[which].color = c
+	_save_colors()
+	if not before.is_empty():
+		_fill_trees()
+	_redraw()
+
+
+func _on_color_changed(c: Color, which: String) -> void:
+	set_color(which, c)
+
+
+func _on_per_volume_toggled(on: bool) -> void:
+	per_volume_outlines = on
+	_save_colors()
+	_redraw()
+
+
+func _reset_colors() -> void:
+	for row in COLOR_ROWS:
+		colors[row[0]] = row[2]
+		_color_buttons[row[0]].color = row[2]
+	per_volume_outlines = true
+	_per_volume_check.set_pressed_no_signal(true)
+	_save_colors()
+	if not before.is_empty():
+		_fill_trees()
+	_redraw()
+
+
+func _open_colors() -> void:
+	_colors_popup.popup_centered()
 
 
 func _on_names_toggled(on: bool) -> void:
@@ -447,18 +573,19 @@ func change_state(key) -> String:
 	return ""
 
 
+## Color of a changed point where it ends up (AFTER), by state.
 func state_color(state: String) -> Color:
 	match state:
 		"manual":
-			return Color(0.35, 0.85, 1.0)
+			return colors.manual
 		"undone":
-			return Color(0.6, 0.6, 0.66)
-		"edge":
-			return Color(1.0, 0.82, 0.25)
-	return Color(1.0, 0.55, 0.1)
+			return colors.undone
+	return colors.fixed
 
 
 func vol_color(vi: int) -> Color:
+	if not per_volume_outlines:
+		return colors.outline
 	return Color.from_hsv(fmod(0.58 + vi * 0.618034, 1.0), 0.45, 0.95, 0.9)
 
 

@@ -135,9 +135,10 @@ func _draw() -> void:
 		sp.append(sp[0])
 		draw_polyline(sp, col, 1.6, true)
 		if panel.cam_zoom > 3.0 or panel.point_count < 2500:
+			var anchor: Color = panel.colors.anchor
 			for s in sp:
 				if view_rect.has_point(s):
-					draw_circle(s, 2.0, col.lightened(0.4))
+					draw_circle(s, 2.5, anchor)
 		if panel.show_names:
 			var label: String = panel.short_names[vi]
 			var tw := font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x
@@ -154,6 +155,8 @@ func _draw() -> void:
 		var from: Vector2 = panel.before[key.x][key.y]
 		var to: Vector2 = panel.after[key.x][key.y]
 		var col: Color = panel.state_color(state)
+		if not is_after and state != "undone":
+			col = panel.colors.off   # where a point sits before it is fixed
 		var a := w2s(from)
 		var b := w2s(to)
 		if not view_rect.has_point(a) and not view_rect.has_point(b):
@@ -191,7 +194,27 @@ func _draw() -> void:
 		draw_line(m + Vector2(-8, 0), m + Vector2(8, 0), Color(0.4, 1, 0.6), 2.0)
 		draw_line(m + Vector2(0, -8), m + Vector2(0, 8), Color(0.4, 1, 0.6), 2.0)
 
+	_draw_legend(font)
 	_draw_title(font, fs)
+
+
+func _draw_legend(font: Font) -> void:
+	var rows := [["Anchor", panel.colors.anchor]]
+	if is_after:
+		rows.append(["Fixed", panel.colors.fixed])
+		rows.append(["Moved by you", panel.colors.manual])
+	else:
+		rows.append(["Off (will move)", panel.colors.off])
+	rows.append(["Undone", panel.colors.undone])
+	var w := 0.0
+	for r in rows:
+		w = maxf(w, font.get_string_size(r[0], HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x)
+	var box := Rect2(size.x - w - 40, 6, w + 34, rows.size() * 18 + 8)
+	draw_rect(box, Color(0, 0, 0, 0.55))
+	for i in range(rows.size()):
+		var y := box.position.y + 13 + i * 18
+		draw_circle(Vector2(box.position.x + 12, y), 5.0, rows[i][1])
+		draw_string(font, Vector2(box.position.x + 24, y + 5), rows[i][0], HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(0.9, 0.9, 0.9))
 
 
 func _draw_title(font: Font, fs: int) -> void:
