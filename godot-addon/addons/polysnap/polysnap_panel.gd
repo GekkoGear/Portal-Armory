@@ -23,6 +23,7 @@ var before: Array = []         # PackedVector2Array, world X/Z as in the scene
 var after: Array = []          # PackedVector2Array, world X/Z after lining up
 var point_count := 0
 var skipped_locked := 0
+var skipped_hidden := 0
 var empty_message := "Open a scene that has PolygonVolume nodes, then press Scan Scene."
 
 # --- user decisions, keyed by Vector2i(volume, point) ---
@@ -478,6 +479,8 @@ func _is_stale() -> bool:
 	for vi in range(nodes.size()):
 		if not is_instance_valid(nodes[vi]) or nodes[vi].get("points") != local_orig[vi]:
 			return true
+		if not nodes[vi].is_visible_in_tree():
+			return true
 		if not nodes[vi].global_transform.is_equal_approx(_scan_xforms[vi]):
 			return true
 	return _find_volumes(r).size() != nodes.size()
@@ -508,15 +511,20 @@ static func _is_polygon_volume(n: Node) -> bool:
 func _find_volumes(r: Node) -> Array:
 	var out: Array = []
 	skipped_locked = 0
+	skipped_hidden = 0
 	var stack: Array = [r]
 	# depth-first, in scene tree order
 	while not stack.is_empty():
 		var n: Node = stack.pop_back()
 		if _is_polygon_volume(n):
-			if n == r or n.owner == r or (n.owner != null and r.is_editable_instance(n.owner)):
-				out.append(n)
-			else:
+			if not (n == r or n.owner == r or (n.owner != null and r.is_editable_instance(n.owner))):
 				skipped_locked += 1
+			elif not (n as Node3D).is_visible_in_tree():
+				# Hidden itself, or under a hidden parent: leave it out of the
+				# preview, the lists and Finalize, and don't snap onto it.
+				skipped_hidden += 1
+			else:
+				out.append(n)
 		var kids := n.get_children()
 		for i in range(kids.size() - 1, -1, -1):
 			stack.append(kids[i])
@@ -564,7 +572,13 @@ func _scan(root: Node, saved: Dictionary) -> void:
 			before.append(wp)
 			_scan_xforms.append(xf)
 			point_count += lp.size()
-		empty_message = "No PolygonVolume nodes found in this scene." if nodes.is_empty() else ""
+		if nodes.is_empty():
+			if skipped_hidden > 0:
+				empty_message = "No visible PolygonVolume nodes found in this scene (%d hidden)." % skipped_hidden
+			else:
+				empty_message = "No PolygonVolume nodes found in this scene."
+		else:
+			empty_message = ""
 	for vi in range(paths.size()):
 		for k in range(before[vi].size()):
 			var s = saved.get("%s|%d" % [paths[vi], k])
@@ -678,6 +692,8 @@ func _update_status() -> void:
 		nodes.size(), point_count, c, e, manual.size(), undone.size(), moved]
 	if skipped_locked > 0:
 		t += "  (%d inside locked instances skipped)" % skipped_locked
+	if skipped_hidden > 0:
+		t += "  (%d hidden skipped)" % skipped_hidden
 	_status.text = "  " + t
 	_finalize.disabled = moved == 0
 	_finalize.text = "Finalize (%d)" % moved if moved > 0 else "Finalize"

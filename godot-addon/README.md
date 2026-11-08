@@ -65,7 +65,8 @@ within the distance of a corner of another polygon volume it snaps onto it while
 or onto the closest edge if no corner is that close. A note next to the toggle says what it
 snapped to. Keep dragging past the distance and it lets go. Hold **Alt** to drag without
 snapping. Only points you drag with the mouse are snapped; undo/redo and values typed in the
-Inspector are left alone. The toggle and distance are remembered.
+Inspector are left alone. Volumes that are hidden in the scene (or under a hidden parent) are
+never snap targets. The toggle and distance are remembered.
 
 Mouse wheel zooms. Right or middle drag (or left drag on empty space) pans. Both views move
 together.
@@ -84,6 +85,11 @@ Gaps under half a millimetre already count as lined up, because Godot stores pos
 
 Volumes inside instanced scenes that don't have *Editable Children* turned on are skipped,
 because Godot wouldn't save changes to them.
+
+Polygon volumes that are hidden in the scene are skipped too, including any volume under a
+hidden parent. They don't appear in BEFORE/AFTER or the lists, they aren't used as snap
+targets, and Finalize won't change them. If you show or hide a volume while the PolySnap tab
+is open, press **Scan Scene** (or reopen the tab) to refresh.
 
 Same engine as the standalone *Spatial Poly Snap* exe in this repo, which works on
 exported `.spatial.json` files instead.

@@ -121,7 +121,9 @@ func _selected_volume() -> Node3D:
 	if sel.size() != 1:
 		return null
 	var n: Node = sel[0]
-	return n if PolySnapPanel._is_polygon_volume(n) else null
+	if not PolySnapPanel._is_polygon_volume(n):
+		return null
+	return n if (n as Node3D).is_visible_in_tree() else null
 
 
 func _process(_delta: float) -> void:
@@ -197,7 +199,7 @@ func _gather(node: Node3D) -> void:
 	var stack: Array = [root]
 	while not stack.is_empty():
 		var n: Node = stack.pop_back()
-		if n != node and PolySnapPanel._is_polygon_volume(n):
+		if n != node and PolySnapPanel._is_polygon_volume(n) and (n as Node3D).is_visible_in_tree():
 			var xf: Transform3D = n.global_transform
 			var w := PackedVector2Array()
 			for p in n.points:
