@@ -64,7 +64,7 @@ func _hook_button() -> void:
 		return
 	_button.set_meta("portal_polygons_tab", true)
 	_button.text = ""
-	_button.tooltip_text = "Polygons"
+	_button.tooltip_text = "PolyPoint"
 	_button.expand_icon = false
 	# keep our colors: don't let the editor tint the icon when hovered or selected
 	for c in ["icon_normal_color", "icon_hover_color", "icon_pressed_color", "icon_hover_pressed_color", "icon_focus_color", "icon_disabled_color"]:
