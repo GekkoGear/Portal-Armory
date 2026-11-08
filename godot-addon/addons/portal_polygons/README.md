@@ -30,6 +30,7 @@ Open your map scene and click **Polygons**.
 | **Changes list** | Every change with its own keep box. Click a row to zoom to it. |
 | **Needs a look** | Problems, corners that are close but weren't snapped (10-50 cm), and corners sitting on the edge of a volume lower in the scene. Click to zoom. |
 | **Finalize** | Writes the AFTER positions into the scene as one step. Ctrl+Z undoes it. |
+| **Ctrl+Z / Ctrl+Y** | Undo and redo work in the tab too: every keep/undo tick, point drag and Reset Choices is its own step in Godot's undo history. |
 
 ## The tab icon
 
