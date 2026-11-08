@@ -36,7 +36,7 @@ Open your map scene and click the **PolySnap** tab (its icon is your map).
 The **PolySnap** tab shows only an icon: the open map seen from above, with its play area
 (the CombatArea's CombatVolume) in white with 14 red points, Team 1's starting HQ in blue and
 Team 2's in orange. Its hover text says "PolySnap". Hover it and the HQs fade while the 14 points drag one after another into
-a "P"; move away and they drag back. With no map open it shows a fixed random shape. It
+a "P"; move away and they drag back. With no map open it shows a fixed random shape. When you open a scene it waits for
 the map to finish loading (checking again every second, for up to 30 seconds) and then shows it.
 
 ## Which way up
