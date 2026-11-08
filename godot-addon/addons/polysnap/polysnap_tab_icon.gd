@@ -40,11 +40,40 @@ var _refresh_in := -1.0
 var _from_map := false      # true once the open map's play area was found
 var _retry_left := 0.0      # keep rescanning this many more seconds while a map is loading
 var _scan_nodes := -1       # node count at the last scan
+var _orig := {}             # the tab's own look, put back when the map icon is turned off
+
+## Off (the default): the tab is the normal "PolySnap" tab. On: the tab shows the
+## animated map icon instead. Turned on with the "Map icon" box in the PolySnap tab.
+var map_icon := false
 
 
 func _ready() -> void:
 	set_process(true)
-	refresh_map()
+	load_setting()
+	if map_icon:
+		refresh_map()
+
+
+func load_setting() -> void:
+	if plugin != null:
+		var es = plugin.get_editor_interface().get_editor_settings()
+		if es.has_setting("polysnap/tab/map_icon"):
+			map_icon = bool(es.get_setting("polysnap/tab/map_icon"))
+
+
+func set_map_icon(on: bool) -> void:
+	if on == map_icon:
+		return
+	map_icon = on
+	if plugin != null:
+		plugin.get_editor_interface().get_editor_settings().set_setting("polysnap/tab/map_icon", on)
+	if on:
+		_button = null              # hooked again on the next frame
+		_root_seen = null
+		refresh_map()
+	else:
+		restore()
+		_button = null
 
 
 ## Find this add-on's tab button among the editor's main screen buttons.
@@ -65,6 +94,9 @@ func _hook_button() -> void:
 	if _button == null:
 		return
 	_button.set_meta("polysnap_tab", true)
+	if _orig.is_empty():
+		_orig = {"icon": _button.icon, "clip": _button.clip_text, "expand": _button.expand_icon,
+			"font_size": _button.get_theme_font_size("font_size") if _button.has_theme_font_size_override("font_size") else -1}
 	# Never change the button's text: Godot finds this tab by its text ("PolySnap")
 	# when it switches tabs or reloads the plugin. The text is only hidden: clipped
 	# to nothing and drawn see-through, so the tab shows just the icon.
@@ -278,6 +310,10 @@ func schedule_refresh() -> void:
 
 
 func _process(delta: float) -> void:
+	if not map_icon:
+		return
+	if _home.size() != 14:
+		refresh_map()
 	if _button == null or not is_instance_valid(_button):
 		_hook_button()
 		if _button == null:
@@ -363,8 +399,15 @@ static func _pts_attr(pts) -> String:
 ## Put the tab back the way Godot made it (when the add-on is turned off).
 func restore() -> void:
 	if _button != null and is_instance_valid(_button):
-		_button.clip_text = false
-		_button.remove_theme_font_size_override("font_size")
+		if not _orig.is_empty():
+			_button.icon = _orig.icon
+			_button.clip_text = _orig.clip
+			_button.expand_icon = _orig.expand
+			if _orig.font_size >= 0:
+				_button.add_theme_font_size_override("font_size", _orig.font_size)
+			else:
+				_button.remove_theme_font_size_override("font_size")
+			_orig = {}
 		for c in ["font_color", "font_hover_color", "font_pressed_color", "font_hover_pressed_color", "font_focus_color", "font_disabled_color", "font_outline_color"]:
 			_button.remove_theme_color_override(c)
 		for c in ["icon_normal_color", "icon_hover_color", "icon_pressed_color", "icon_hover_pressed_color", "icon_focus_color", "icon_disabled_color"]:

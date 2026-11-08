@@ -29,6 +29,8 @@ func _enter_tree() -> void:
 	_tab_icon = TabIcon.new()
 	_tab_icon.plugin = self
 	add_child(_tab_icon)
+	_tab_icon.load_setting()
+	_panel.sync_map_icon_box()
 
 
 func _exit_tree() -> void:
@@ -71,6 +73,16 @@ func _get_plugin_icon() -> Texture2D:
 	if base.has_theme_icon("CollisionPolygon2D", "EditorIcons"):
 		return base.get_theme_icon("CollisionPolygon2D", "EditorIcons")
 	return base.get_theme_icon("Node", "EditorIcons")
+
+
+## The "Map icon" box in the PolySnap tab: animated map icon on, or the plain "PolySnap" tab.
+func set_map_icon(on: bool) -> void:
+	if _tab_icon != null:
+		_tab_icon.set_map_icon(on)
+
+
+func map_icon_on() -> bool:
+	return _tab_icon != null and _tab_icon.map_icon
 
 
 ## The PolySnap tab's Rotate button was pressed: turn the tab icon the same way.

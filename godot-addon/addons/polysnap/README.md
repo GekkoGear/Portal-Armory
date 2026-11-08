@@ -19,7 +19,7 @@ Fully offline.
 
 ## Use
 
-Open your map scene and click the **PolySnap** tab (its icon is your map).
+Open your map scene and click the **PolySnap** tab.
 
 | | |
 |---|---|
@@ -31,13 +31,16 @@ Open your map scene and click the **PolySnap** tab (its icon is your map).
 | **Needs a look** | Problems, corners that are close but weren't snapped (10-50 cm), and corners sitting on the edge of a volume lower in the scene. Click to zoom. |
 | **Finalize** | Writes the AFTER positions into the scene as one step. Ctrl+Z undoes it. |
 
-## The tab icon
+## The tab
 
-The **PolySnap** tab shows only an icon: the open map seen from above, with its play area
-(the CombatArea's CombatVolume) in white with 14 red points, Team 1's starting HQ in blue and
-Team 2's in orange. Its hover text says "PolySnap". Hover it and the HQs fade while the 14 points drag one after another into
-a "P"; move away and they drag back. With no map open it shows a fixed random shape. When you open a scene it waits for
-the map to finish loading (checking again every second, for up to 30 seconds) and then shows it.
+The tab says **PolySnap**. Tick **Map icon** in the PolySnap tab's toolbar to swap the
+name for an animated icon instead: the open map seen from above, with its play area (the
+CombatArea's CombatVolume) in white with 14 red points, Team 1's starting HQ in blue and
+Team 2's in orange. Its hover text says "PolySnap". Hover it and the HQs fade while the 14
+points drag one after another into a "P"; move away and they drag back. With no map open
+it shows a fixed random shape. When you open a scene it waits for the map to finish
+loading (checking again every second, for up to 30 seconds) and then shows it. Untick
+**Map icon** to go back to the plain tab. The choice is remembered.
 
 ## Which way up
 

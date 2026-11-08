@@ -43,6 +43,7 @@ var cam_zoom := 1.0
 var show_names := true
 var view_rot := 0      # quarter turns clockwise from Godot's 3D top view
 var _rot_btn: Button
+var _icon_box: CheckBox
 
 # --- colors (saved in Editor Settings, so they stick across projects) ---
 const COLOR_ROWS := [
@@ -140,6 +141,11 @@ func _build_ui() -> void:
 	col_btn.tooltip_text = "Pick the colors of anchor, off, fixed and other points, and the polygon outlines."
 	col_btn.pressed.connect(_open_colors)
 	bar.add_child(col_btn)
+	_icon_box = CheckBox.new()
+	_icon_box.text = "Map icon"
+	_icon_box.tooltip_text = "Show the open map as an animated icon on the PolySnap tab instead of its name."
+	_icon_box.toggled.connect(_on_map_icon_toggled)
+	bar.add_child(_icon_box)
 	var spacer := Control.new()
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	bar.add_child(spacer)
@@ -977,3 +983,13 @@ func _finalize_now() -> void:
 	ur.commit_action()
 	print("PolySnap: moved %d point(s) on %d polygon volume(s). Ctrl+Z to undo." % [moved, count])
 	rescan(false)
+
+
+func _on_map_icon_toggled(on: bool) -> void:
+	if plugin != null:
+		plugin.set_map_icon(on)
+
+
+func sync_map_icon_box() -> void:
+	if _icon_box != null and plugin != null:
+		_icon_box.set_pressed_no_signal(plugin.map_icon_on())
