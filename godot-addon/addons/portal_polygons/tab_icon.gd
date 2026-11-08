@@ -37,6 +37,9 @@ var _last_key := ""
 var _cache := {}
 var _root_seen = null
 var _refresh_in := -1.0
+var _from_map := false      # true once the open map's play area was found
+var _retry_left := 0.0      # keep rescanning this many more seconds while a map is loading
+var _scan_nodes := -1       # node count at the last scan
 
 
 func _ready() -> void:
@@ -89,6 +92,8 @@ func _on_exit() -> void:
 func refresh_map() -> void:
 	var root = plugin.get_editor_interface().get_edited_scene_root() if plugin != null else null
 	var data := _map_from_scene(root)
+	_from_map = not data.is_empty()
+	_scan_nodes = _count_nodes(root)
 	if data.is_empty():
 		data = {"play": _random_shape(), "hqs": [], "fitted": true}
 	_fit(data)
@@ -114,6 +119,23 @@ func _rotation() -> int:
 	return 0
 
 
+## The node an export points at. The SDK stores CombatVolume / HQArea as node
+## exports (a Node once the scene is loaded); older scenes may hold a NodePath.
+static func _linked(n: Node, prop: String) -> Node:
+	var v = n.get(prop)
+	if v is Node:
+		return v if is_instance_valid(v) else null
+	if typeof(v) == TYPE_NODE_PATH and not v.is_empty():
+		return n.get_node_or_null(v)
+	return null
+
+
+static func _count_nodes(root) -> int:
+	if root == null or not is_instance_valid(root) or not root.is_inside_tree():
+		return -1
+	return root.find_children("*", "", true, false).size()
+
+
 func _map_from_scene(root: Node) -> Dictionary:
 	if root == null or not root.is_inside_tree():
 		return {}
@@ -121,15 +143,15 @@ func _map_from_scene(root: Node) -> Dictionary:
 	var hqs: Array = []
 	var seen := {}
 	for n in root.find_children("*", "", true, false):
-		if play == null and typeof(n.get("CombatVolume")) == TYPE_NODE_PATH:
-			var v = n.get_node_or_null(n.get("CombatVolume"))
+		if play == null and "CombatVolume" in n:
+			var v = _linked(n, "CombatVolume")
 			if v != null and PolygonsPanel._is_polygon_volume(v) and v.get("points").size() >= 3:
 				play = _world_xz(v)
-		if typeof(n.get("HQArea")) == TYPE_NODE_PATH:
+		if "HQArea" in n:
 			var team := 2 if int(n.get("Team")) == 2 else 1
 			if seen.has(team):
 				continue          # each team's first HQ in the scene = its starting HQ
-			var a = n.get_node_or_null(n.get("HQArea"))
+			var a = _linked(n, "HQArea")
 			if a != null and PolygonsPanel._is_polygon_volume(a) and a.get("points").size() >= 3:
 				seen[team] = true
 				hqs.append([team, _world_xz(a)])
@@ -241,9 +263,12 @@ func _progress() -> Array:
 	return out
 
 
-## Re-read the map a moment after a scene opens (once its nodes have loaded).
+## Re-read the map once a scene has opened. Big maps take a while to finish
+## loading, so until the play area is found it keeps checking for up to 30 s,
+## and keeps going while the scene is still growing. Hovering the tab reads it again too.
 func schedule_refresh() -> void:
 	_refresh_in = 0.6
+	_retry_left = 30.0
 
 
 func _process(delta: float) -> void:
@@ -258,7 +283,16 @@ func _process(delta: float) -> void:
 	if _refresh_in >= 0.0:
 		_refresh_in -= delta
 		if _refresh_in < 0.0:
+			var before := _scan_nodes
 			refresh_map()
+			# Done once the play area is found and the scene stopped growing;
+			# otherwise look again in a second (for up to 30 s after it opened).
+			if _retry_left > 0.0 and root != null and not (_from_map and _scan_nodes == before):
+				_refresh_in = 1.0
+			else:
+				_retry_left = 0.0
+	if _retry_left > 0.0:
+		_retry_left -= delta
 	_since += delta
 	var prog := _progress()
 	var key := ""
