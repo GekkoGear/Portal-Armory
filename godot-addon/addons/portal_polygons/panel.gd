@@ -383,46 +383,10 @@ func _on_north_toggled(on: bool) -> void:
 
 
 func _reset_choices() -> void:
-	var was := _snapshot()
 	fixed.clear()
 	manual.clear()
 	undone.clear()
 	recompute(true)
-	_record("reset choices", was)
-
-
-# ---- Ctrl+Z / Ctrl+Y for keep/undo ticks, drags and Reset Choices ----
-# Each choice is one step in Godot's own undo history, so the editor's Undo and
-# Redo shortcuts step through them. Steps from before the last scan are skipped.
-
-var _scan_id := 0
-
-
-func _snapshot() -> Dictionary:
-	return {"scan": _scan_id, "fixed": fixed.duplicate(), "manual": manual.duplicate(), "undone": undone.duplicate(true)}
-
-
-func _record(what: String, was: Dictionary) -> void:
-	if plugin == null:
-		return
-	var now := _snapshot()
-	if now.fixed == was.fixed and now.manual == was.manual and now.undone.keys() == was.undone.keys():
-		return   # nothing changed
-	var ur = plugin.get_undo_redo()
-	ur.create_action("Polygons: " + what)
-	ur.add_do_method(self, "_restore", now)
-	ur.add_undo_method(self, "_restore", was)
-	ur.commit_action(false)   # already applied
-
-
-func _restore(state: Dictionary) -> void:
-	if state.scan != _scan_id:
-		return   # from before the last Scan Scene / Finalize
-	fixed = state.fixed.duplicate()
-	manual = state.manual.duplicate()
-	undone = state.undone.duplicate(true)
-	recompute(true)
-	_refresh_card()
 
 
 func _on_card_keep(on: bool) -> void:
@@ -542,7 +506,6 @@ func _find_volumes(r: Node) -> Array:
 ## Read the scene again. keep_choices tries to carry over the user's
 ## keep/undo/move choices (by node path and point number).
 func rescan(keep_choices: bool) -> void:
-	_scan_id += 1
 	var saved := {}
 	if keep_choices:
 		for key in fixed.keys():
@@ -793,15 +756,11 @@ func _on_tree_selected(t: Tree) -> void:
 ## Keep (true) or undo (false) the change at key. For a point the user dragged,
 ## false throws the drag away.
 func set_keep(key, keep: bool) -> void:
-	var was := _snapshot()
-	var what := "undo point change"
 	if manual.has(key):
-		what = "reset point"
 		if not keep:
 			manual.erase(key)
 			fixed.erase(key)
 	elif keep:
-		what = "keep point change"
 		undone.erase(key)
 		fixed.erase(key)
 	elif moves.has(key):
@@ -809,7 +768,6 @@ func set_keep(key, keep: bool) -> void:
 		fixed[key] = before[key.x][key.y]
 	recompute(true)
 	_refresh_card()
-	_record(what, was)
 
 
 # ============================================================ view / input
@@ -908,12 +866,10 @@ func _process(delta: float) -> void:
 
 
 var _drag_start = null
-var _drag_was = null
 
 
 func begin_drag(key) -> void:
 	_drag_start = after[key.x][key.y]
-	_drag_was = _snapshot()
 	_card.visible = false
 
 
@@ -960,9 +916,6 @@ func end_drag(key) -> void:
 		fixed.erase(key)
 	_drag_start = null
 	recompute(true)
-	if _drag_was != null:
-		_record("move point", _drag_was)
-		_drag_was = null
 
 
 func _show_in_3d(vi: int) -> void:
