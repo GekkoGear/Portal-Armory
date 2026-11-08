@@ -6,6 +6,7 @@ extends Control
 
 const Align = preload("align.gd")
 const MapView = preload("view.gd")
+const Updater = preload("updater.gd")
 
 const NEAR_MISS := 0.5
 
@@ -55,6 +56,7 @@ var per_volume_outlines := true
 var _color_buttons := {}
 var _per_volume_check: CheckBox
 var _colors_popup: PopupPanel
+var _updater = null
 var hover_key = null
 var _card_key = null
 var _card_hide := 0.0
@@ -134,6 +136,16 @@ func _build_ui() -> void:
 	var spacer := Control.new()
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	bar.add_child(spacer)
+	var upd := Button.new()
+	upd.text = "Check for Update"
+	if Updater.UPDATES_ENABLED:
+		upd.tooltip_text = "Check GitHub for a newer Portal Polygons. This is the only time the add-on goes online."
+		upd.pressed.connect(_open_updater)
+	else:
+		upd.text = "Check for Update (Coming Later)"
+		upd.tooltip_text = "Coming Later"
+		upd.disabled = true
+	bar.add_child(upd)
 	var reset := Button.new()
 	reset.text = "Reset Choices"
 	reset.tooltip_text = "Forget every keep/undo/move choice and go back to the automatic line-up."
@@ -332,6 +344,14 @@ func _reset_colors() -> void:
 	if not before.is_empty():
 		_fill_trees()
 	_redraw()
+
+
+func _open_updater() -> void:
+	if _updater == null:
+		_updater = Updater.new()
+		_updater.plugin = plugin
+		add_child(_updater)
+	_updater.open()
 
 
 func _open_colors() -> void:

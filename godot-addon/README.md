@@ -31,6 +31,15 @@ Open your map scene and click **Polygons**.
 | **Needs a look** | Problems, corners that are close but weren't snapped (10-50 cm), and corners sitting on the edge of a volume lower in the scene. Click to zoom. |
 | **Finalize** | Writes the AFTER positions into the scene as one step. Ctrl+Z undoes it. |
 
+## Updating (Coming Later)
+
+The toolbar has a **Check for Update** button that is switched off for now. When it is
+turned on, pressing it is the only time the add-on goes online: it reads the installed
+version (Rev 3.0 is the current one), checks GitHub for a newer `portal-polygons-rev...`
+release, and only if there is one downloads it, checks it, backs up the old version and
+replaces only the tool's own files (listed in `manifest.txt`) in the folder you pick or
+drag in. Nothing else is ever deleted.
+
 ## Point Snap (3D view)
 
 The 3D view's toolbar gets a **Point Snap** toggle and a distance box (0.25 m by default).
