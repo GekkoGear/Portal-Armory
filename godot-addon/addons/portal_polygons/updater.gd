@@ -1,6 +1,6 @@
 @tool
 extends Node
-## "Check for Update" for Portal Polygons.
+## "Check for Update" for PolySnap.
 ##
 ## Goes online ONLY when the user presses Check for Update, and only to read the
 ## releases of the GitHub repo below and, if there is a newer version, download
@@ -8,9 +8,9 @@ extends Node
 ##
 ## Steps:
 ##   1. Read the installed version from the chosen folder's plugin.cfg.
-##   2. Ask GitHub for the releases, pick the newest one tagged "portal-polygons-rev<version>" (e.g. portal-polygons-rev3.0).
+##   2. Ask GitHub for the releases, pick the newest one tagged "polysnap-rev<version>" (e.g. polysnap-rev3.5).
 ##   3. Only if it is newer: download its .zip to a temporary file, and check that
-##      it really is Portal Polygons (right name, right version, only plain files).
+##      it really is PolySnap (right name, right version, only plain files).
 ##   4. Back up the old tool files, delete ONLY the tool's own files (the list in
 ##      its manifest.txt, plus the .uid files Godot makes next to them), write the
 ##      new files, and restart the add-on.
@@ -20,8 +20,10 @@ extends Node
 const UPDATES_ENABLED := false
 
 const REPO := "GekkoGear/portal-armory"
-const TAG_PREFIX := "portal-polygons-rev"
-const PLUGIN_NAME := "Portal Polygons"
+const TAG_PREFIX := "polysnap-rev"
+const PLUGIN_NAME := "PolySnap"
+## Earlier name of this add-on; installs that still carry it can be updated too.
+const OLD_NAMES := ["Portal Polygons"]
 const ZIP_FOLDER := "portal_polygons/"
 ## Files of versions that came before manifest.txt existed.
 const KNOWN_FILES := ["README.md", "align.gd", "panel.gd", "plugin.cfg", "plugin.gd", "snap3d.gd", "view.gd", "updater.gd", "tab_icon.gd", "manifest.txt"]
@@ -71,7 +73,7 @@ static func _is_version(s: String) -> bool:
 	return true
 
 
-## From GitHub's release list, the newest published Portal Polygons release
+## From GitHub's release list, the newest published PolySnap release
 ## that has a .zip attached: { version, tag, zip_url } or {} if none.
 static func pick_release(releases) -> Dictionary:
 	var best := {}
@@ -103,8 +105,9 @@ static func read_installed(folder: String) -> Dictionary:
 	var cfg := ConfigFile.new()
 	if cfg.load(folder.path_join("plugin.cfg")) != OK:
 		return {"ok": false, "error": "There's no plugin.cfg in that folder. Pick your project's addons/portal_polygons folder."}
-	if str(cfg.get_value("plugin", "name", "")) != PLUGIN_NAME:
-		return {"ok": false, "error": "That folder holds a different add-on (%s), not Portal Polygons. Nothing was changed." % str(cfg.get_value("plugin", "name", "?"))}
+	var nm := str(cfg.get_value("plugin", "name", ""))
+	if nm != PLUGIN_NAME and not OLD_NAMES.has(nm):
+		return {"ok": false, "error": "That folder holds a different add-on (%s), not PolySnap. Nothing was changed." % str(cfg.get_value("plugin", "name", "?"))}
 	var ver := _clean(str(cfg.get_value("plugin", "version", "")))
 	if not _is_version(ver):
 		return {"ok": false, "error": "Couldn't read the installed version from plugin.cfg."}
@@ -113,7 +116,7 @@ static func read_installed(folder: String) -> Dictionary:
 
 ## Opens and checks a downloaded zip. Everything must sit directly inside a
 ## portal_polygons/ folder (no sub-folders, no ".." tricks), and its plugin.cfg
-## must be Portal Polygons at the expected version.
+## must be PolySnap at the expected version.
 ## { ok, files: { name: PackedByteArray }, error }
 static func read_zip(zip_path: String, expect_version: String) -> Dictionary:
 	var z := ZIPReader.new()
@@ -139,7 +142,7 @@ static func read_zip(zip_path: String, expect_version: String) -> Dictionary:
 		return {"ok": false, "error": "The download is missing plugin.cfg or plugin.gd. Nothing was changed."}
 	var cfg := ConfigFile.new()
 	if cfg.parse(files["plugin.cfg"].get_string_from_utf8()) != OK or str(cfg.get_value("plugin", "name", "")) != PLUGIN_NAME:
-		return {"ok": false, "error": "The download isn't Portal Polygons. Nothing was changed."}
+		return {"ok": false, "error": "The download isn't PolySnap. Nothing was changed."}
 	var ver := str(cfg.get_value("plugin", "version", ""))
 	if expect_version != "" and compare_versions(ver, expect_version) != 0:
 		return {"ok": false, "error": "The download says it is Rev %s, but the release is Rev %s. Nothing was changed." % [ver, expect_version]}
@@ -209,7 +212,7 @@ static func _restore(folder: String, backup_dir: String, old: Array, written: Ar
 
 func _build() -> void:
 	_dialog = AcceptDialog.new()
-	_dialog.title = "Portal Polygons - Check for Update"
+	_dialog.title = "PolySnap - Check for Update"
 	_dialog.ok_button_text = "Close"
 	_dialog.files_dropped.connect(_on_files_dropped)
 	add_child(_dialog)
@@ -217,7 +220,7 @@ func _build() -> void:
 	box.custom_minimum_size = Vector2(560, 0)
 	_dialog.add_child(box)
 	var info := Label.new()
-	info.text = "Checks GitHub for a newer Portal Polygons and installs it into this folder.\nThis is the only time the add-on goes online. Drag your portal_polygons folder here, or press Browse."
+	info.text = "Checks GitHub for a newer PolySnap and installs it into this folder.\nThis is the only time the add-on goes online. Drag your portal_polygons folder here, or press Browse."
 	info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	box.add_child(info)
 	var row := HBoxContainer.new()
@@ -290,7 +293,7 @@ func _on_browse() -> void:
 func _say(text: String) -> void:
 	if _status != null:
 		_status.text = text
-	print("Portal Polygons update: " + text)
+	print("PolySnap update: " + text)
 
 
 # =============================================================== online
@@ -320,7 +323,7 @@ func check_for_update(folder: String = "") -> void:
 
 
 func _headers() -> PackedStringArray:
-	return PackedStringArray(["User-Agent: Portal-Polygons-Updater", "Accept: application/vnd.github+json"])
+	return PackedStringArray(["User-Agent: PolySnap-Updater", "Accept: application/vnd.github+json"])
 
 
 func _on_releases(result: int, code: int, _h: PackedStringArray, body: PackedByteArray) -> void:
@@ -331,7 +334,7 @@ func _on_releases(result: int, code: int, _h: PackedStringArray, body: PackedByt
 		return
 	var rel := pick_release(JSON.parse_string(body.get_string_from_utf8()))
 	if rel.is_empty():
-		_done("No Portal Polygons release is published yet. You have Rev %s." % _pending.installed)
+		_done("No PolySnap release is published yet. You have Rev %s." % _pending.installed)
 		return
 	if compare_versions(rel.version, _pending.installed) <= 0:
 		_done("You're up to date (Rev %s). Nothing was downloaded." % _pending.installed)

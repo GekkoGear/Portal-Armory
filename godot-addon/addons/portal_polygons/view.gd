@@ -3,7 +3,7 @@ extends Control
 ## One top-down map view (BEFORE or AFTER). Both views share the panel's camera,
 ## so zooming or panning one moves the other with it.
 
-var panel = null          # the Polygons panel that owns the data
+var panel = null          # the PolySnap panel that owns the data
 var is_after := false
 var hover_key = null      # Vector2i(volume, point) under the mouse, or null
 var _drag_key = null
@@ -19,20 +19,14 @@ func _ready() -> void:
 	custom_minimum_size = Vector2(200, 200)
 
 
-## World X/Z to screen. With "North up" on (the in-game way up), +Z is at the top;
-## off, it matches Godot's own top view (+Z at the bottom).
+## World X/Z to screen, always seen from above like Godot's 3D top view
+## (+X right, +Z down), turned by the panel's Rotate setting. Never mirrored.
 func w2s(p: Vector2) -> Vector2:
-	var d: Vector2 = (p - panel.cam_center) * panel.cam_zoom
-	if panel.flip_z:
-		d.y = -d.y
-	return size * 0.5 + d
+	return size * 0.5 + panel.rot((p - panel.cam_center) * panel.cam_zoom, panel.view_rot)
 
 
 func s2w(s: Vector2) -> Vector2:
-	var d: Vector2 = (s - size * 0.5) / panel.cam_zoom
-	if panel.flip_z:
-		d.y = -d.y
-	return panel.cam_center + d
+	return panel.cam_center + panel.rot((s - size * 0.5) / panel.cam_zoom, -panel.view_rot)
 
 
 func _pts(vi: int) -> PackedVector2Array:
@@ -240,22 +234,21 @@ func _draw_grid(font: Font) -> void:
 		step = s
 		if s * panel.cam_zoom >= 70.0:
 			break
-	var tl := s2w(Vector2.ZERO)
-	var br := s2w(size)
+	# world area on screen (any rotation)
+	var box := Rect2(s2w(Vector2.ZERO), Vector2.ZERO)
+	for c in [Vector2(size.x, 0), size, Vector2(0, size.y)]:
+		box = box.expand(s2w(c))
 	var gc := Color(1, 1, 1, 0.05)
-	var x := floorf(tl.x / step) * step
+	var x := floorf(box.position.x / step) * step
 	var guard := 0
-	while x <= br.x and guard < 400:
-		var sx := w2s(Vector2(x, 0)).x
-		draw_line(Vector2(sx, 0), Vector2(sx, size.y), gc, 1.0)
+	while x <= box.end.x and guard < 400:
+		draw_line(w2s(Vector2(x, box.position.y)), w2s(Vector2(x, box.end.y)), gc, 1.0)
 		x += step
 		guard += 1
-	var z := floorf(minf(tl.y, br.y) / step) * step
-	var z_end := maxf(tl.y, br.y)
+	var z := floorf(box.position.y / step) * step
 	guard = 0
-	while z <= z_end and guard < 400:
-		var sy := w2s(Vector2(0, z)).y
-		draw_line(Vector2(0, sy), Vector2(size.x, sy), gc, 1.0)
+	while z <= box.end.y and guard < 400:
+		draw_line(w2s(Vector2(box.position.x, z)), w2s(Vector2(box.end.x, z)), gc, 1.0)
 		z += step
 		guard += 1
 	# Scale bar.

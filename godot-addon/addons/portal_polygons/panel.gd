@@ -1,6 +1,6 @@
 @tool
 extends Control
-## The "Polygons" main screen: scan the open scene's PolygonVolume nodes, show
+## The "PolySnap" main screen: scan the open scene's PolygonVolume nodes, show
 ## a top-down BEFORE / AFTER of the proposed line-up, let the user keep, undo or
 ## drag each change, then write it all back to the scene in one undoable step.
 
@@ -41,8 +41,8 @@ var change_keys: Array = []
 var cam_center := Vector2.ZERO
 var cam_zoom := 1.0
 var show_names := true
-var flip_z := true      # "North up": draw maps the in-game way up
-var _north: CheckBox
+var view_rot := 0      # quarter turns clockwise from Godot's 3D top view
+var _rot_btn: Button
 
 # --- colors (saved in Editor Settings, so they stick across projects) ---
 const COLOR_ROWS := [
@@ -100,7 +100,7 @@ func _build_ui() -> void:
 	var bar := HBoxContainer.new()
 	root.add_child(bar)
 	var title := Label.new()
-	title.text = "  Polygons  "
+	title.text = "  PolySnap  "
 	bar.add_child(title)
 	var scan := Button.new()
 	scan.text = "Scan Scene"
@@ -130,12 +130,11 @@ func _build_ui() -> void:
 	names.button_pressed = true
 	names.toggled.connect(_on_names_toggled)
 	bar.add_child(names)
-	_north = CheckBox.new()
-	_north.text = "North up"
-	_north.button_pressed = true
-	_north.tooltip_text = "On: maps are drawn the in-game way up. Off: the same way up as Godot's 3D top view."
-	_north.toggled.connect(_on_north_toggled)
-	bar.add_child(_north)
+	_rot_btn = Button.new()
+	_rot_btn.text = "Rotate 0°"
+	_rot_btn.tooltip_text = "Turn the BEFORE/AFTER views (and the tab icon) 90° clockwise. 0° is exactly Godot's 3D top view, seen from above."
+	_rot_btn.pressed.connect(_on_rotate)
+	bar.add_child(_rot_btn)
 	var col_btn := Button.new()
 	col_btn.text = "Colors"
 	col_btn.tooltip_text = "Pick the colors of anchor, off, fixed and other points, and the polygon outlines."
@@ -147,7 +146,7 @@ func _build_ui() -> void:
 	var upd := Button.new()
 	upd.text = "Check for Update"
 	if Updater.UPDATES_ENABLED:
-		upd.tooltip_text = "Check GitHub for a newer Portal Polygons. This is the only time the add-on goes online."
+		upd.tooltip_text = "Check GitHub for a newer PolySnap. This is the only time the add-on goes online."
 		upd.pressed.connect(_open_updater)
 	else:
 		upd.text = "Check for Update (Coming Later)"
@@ -247,7 +246,7 @@ func _build_ui() -> void:
 	_confirm.confirmed.connect(_finalize_now)
 	add_child(_confirm)
 	_alert = AcceptDialog.new()
-	_alert.title = "Polygons"
+	_alert.title = "PolySnap"
 	add_child(_alert)
 	_build_colors_popup()
 	_update_status()
@@ -305,9 +304,9 @@ func load_colors() -> void:
 		if es.has_setting(k) and typeof(es.get_setting(k)) == TYPE_COLOR:
 			colors[row[0]] = es.get_setting(k)
 		_color_buttons[row[0]].color = colors[row[0]]
-	if es.has_setting("portal_polygons/view/north_up"):
-		flip_z = bool(es.get_setting("portal_polygons/view/north_up"))
-		_north.set_pressed_no_signal(flip_z)
+	if es.has_setting("portal_polygons/view/rotation"):
+		view_rot = int(es.get_setting("portal_polygons/view/rotation")) % 4
+	_rot_btn.text = "Rotate %d°" % (view_rot * 90)
 	var pk := "portal_polygons/colors/per_volume_outlines"
 	if es.has_setting(pk):
 		per_volume_outlines = bool(es.get_setting(pk))
@@ -374,12 +373,27 @@ func _on_names_toggled(on: bool) -> void:
 	_redraw()
 
 
-func _on_north_toggled(on: bool) -> void:
-	flip_z = on
+## Turn v by q quarter turns clockwise on screen (exact, no rounding).
+static func rot(v: Vector2, q: int) -> Vector2:
+	match posmod(q, 4):
+		1:
+			return Vector2(-v.y, v.x)
+		2:
+			return -v
+		3:
+			return Vector2(v.y, -v.x)
+	return v
+
+
+func _on_rotate() -> void:
+	view_rot = (view_rot + 1) % 4
+	_rot_btn.text = "Rotate %d°" % (view_rot * 90)
 	var es = _settings()
 	if es != null:
-		es.set_setting("portal_polygons/view/north_up", on)
-	_redraw()
+		es.set_setting("portal_polygons/view/rotation", view_rot)
+	fit_view()
+	if plugin != null and plugin.has_method("on_view_rotated"):
+		plugin.on_view_rotated()
 
 
 func _reset_choices() -> void:
@@ -791,6 +805,8 @@ func fit_view() -> void:
 	if vs.x < 10 or vs.y < 10:
 		vs = Vector2(600, 600)
 	var span := Vector2(maxf(box.size.x, 1.0), maxf(box.size.y, 1.0))
+	if view_rot % 2 == 1:
+		span = Vector2(span.y, span.x)
 	cam_zoom = minf(vs.x / span.x, vs.y / span.y) * 0.9
 	cam_center = box.get_center()
 	_redraw()
@@ -807,18 +823,13 @@ func focus_on(at: Vector2, dist: float = 0.1) -> void:
 
 func zoom_at(world: Vector2, screen: Vector2, view_size: Vector2, f: float) -> void:
 	cam_zoom = clampf(cam_zoom * f, 0.01, 200000.0)
-	var off: Vector2 = (screen - view_size * 0.5) / cam_zoom
-	if flip_z:
-		off.y = -off.y
-	cam_center = world - off
+	cam_center = world - rot((screen - view_size * 0.5) / cam_zoom, -view_rot)
 	_redraw()
 
 
 ## d is a screen-space drag already divided by the zoom.
 func pan(d: Vector2) -> void:
-	if flip_z:
-		d.y = -d.y
-	cam_center += d
+	cam_center += rot(d, -view_rot)
 	_redraw()
 
 
@@ -947,7 +958,7 @@ func _finalize_now() -> void:
 		return
 	var ur = plugin.get_undo_redo()
 	var moved := _moved_count()
-	ur.create_action("Polygons: line up %d point(s)" % moved)
+	ur.create_action("PolySnap: line up %d point(s)" % moved)
 	var count := 0
 	for vi in range(before.size()):
 		if before[vi] == after[vi]:
@@ -964,5 +975,5 @@ func _finalize_now() -> void:
 		ur.add_undo_property(node, "points", local_orig[vi])
 		count += 1
 	ur.commit_action()
-	print("Polygons: moved %d point(s) on %d polygon volume(s). Ctrl+Z to undo." % [moved, count])
+	print("PolySnap: moved %d point(s) on %d polygon volume(s). Ctrl+Z to undo." % [moved, count])
 	rescan(false)

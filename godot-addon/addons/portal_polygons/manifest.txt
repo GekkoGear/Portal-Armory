@@ -1,4 +1,4 @@
-# Portal Polygons files. The updater only ever deletes or replaces the files listed here
+# PolySnap files. The updater only ever deletes or replaces the files listed here
 # (and the .uid files Godot makes next to them), inside this folder.
 README.md
 align.gd

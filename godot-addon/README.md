@@ -1,7 +1,7 @@
-# Portal Polygons (Godot add-on)
+# PolySnap (Godot add-on)
 
 Lines up the PolygonVolume points in a Battlefield 6 Portal scene, right inside Godot.
-It adds a **Polygons** tab, and a **Point Snap** toggle to the 3D view, next to 2D / 3D / Script that shows a top-down BEFORE / AFTER of
+It adds a **PolySnap** tab, and a **Point Snap** toggle to the 3D view, next to 2D / 3D / Script that shows a top-down BEFORE / AFTER of
 every proposed change. Keep, undo or drag each one, then press **Finalize** to write it
 into the scene. Ctrl+Z undoes it.
 
@@ -14,12 +14,12 @@ Fully offline.
 1. Copy the `portal_polygons` folder into your project's `addons` folder, so you have
    `GodotProject/addons/portal_polygons/plugin.cfg`.
 2. In Godot: **Project > Project Settings > Plugins**, tick **Enabled** next to
-   *Portal Polygons*. (Godot asks for this once per project.)
-3. A **Polygons** tab appears at the top of the editor.
+   *PolySnap*. (Godot asks for this once per project.)
+3. A **PolySnap** tab appears at the top of the editor.
 
 ## Use
 
-Open your map scene and click **Polygons**.
+Open your map scene and click the **PolySnap** tab (its icon is your map).
 
 | | |
 |---|---|
@@ -33,23 +33,23 @@ Open your map scene and click **Polygons**.
 
 ## The tab icon
 
-The **Polygons** tab shows only an icon: the open map seen from above, with its play area
+The **PolySnap** tab shows only an icon: the open map seen from above, with its play area
 (the CombatArea's CombatVolume) in white with 14 red points, Team 1's starting HQ in blue and
-Team 2's in orange. Its hover text says "PolyPoint". Hover it and the HQs fade while the 14 points drag one after another into
+Team 2's in orange. Its hover text says "PolySnap". Hover it and the HQs fade while the 14 points drag one after another into
 a "P"; move away and they drag back. With no map open it shows a fixed random shape. It
 updates when you open another scene.
 
 ## Which way up
 
-Maps are drawn the in-game way up (+Z at the top). Untick **North up** in the Polygons tab to
-see them the way Godot's 3D top view shows them instead. The tab icon always uses the
-in-game way up.
+Maps are always drawn from above, exactly like Godot's 3D top view (+X to the right, +Z toward
+the bottom). Press **Rotate** in the PolySnap tab to turn the BEFORE/AFTER views 90° at a time so
+a map sits the way you think of it; the tab icon turns with them. Turning never mirrors a map.
 
 ## Updating (Coming Later)
 
 The toolbar has a **Check for Update** button that is switched off for now. When it is
 turned on, pressing it is the only time the add-on goes online: it reads the installed
-version (Rev 3.5 is the current one), checks GitHub for a newer `portal-polygons-rev...`
+version (Rev 3.5 is the current one), checks GitHub for a newer `polysnap-rev...`
 release, and only if there is one downloads it, checks it, backs up the old version and
 replaces only the tool's own files (listed in `manifest.txt`) in the folder you pick or
 drag in. Nothing else is ever deleted.

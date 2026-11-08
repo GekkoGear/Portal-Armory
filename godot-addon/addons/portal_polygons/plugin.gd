@@ -1,6 +1,6 @@
 @tool
 extends EditorPlugin
-## Adds a "Polygons" tab next to 2D / 3D / Script.
+## Adds a "PolySnap" tab next to 2D / 3D / Script.
 
 const PolygonsPanel = preload("panel.gd")
 const PointSnap = preload("snap3d.gd")
@@ -63,7 +63,7 @@ func _make_visible(visible: bool) -> void:
 
 
 func _get_plugin_name() -> String:
-	return "Polygons"
+	return "PolySnap"
 
 
 func _get_plugin_icon() -> Texture2D:
@@ -71,6 +71,12 @@ func _get_plugin_icon() -> Texture2D:
 	if base.has_theme_icon("CollisionPolygon2D", "EditorIcons"):
 		return base.get_theme_icon("CollisionPolygon2D", "EditorIcons")
 	return base.get_theme_icon("Node", "EditorIcons")
+
+
+## The PolySnap tab's Rotate button was pressed: turn the tab icon the same way.
+func on_view_rotated() -> void:
+	if _tab_icon != null:
+		_tab_icon.refresh_map()
 
 
 func _on_scene_changed(root) -> void:

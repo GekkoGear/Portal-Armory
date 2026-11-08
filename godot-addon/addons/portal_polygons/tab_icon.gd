@@ -1,6 +1,6 @@
 @tool
 extends Node
-## The animated "Polygons" tab icon.
+## The animated PolySnap tab icon.
 ##
 ## Idle: the open map from above - its play area (the CombatArea's CombatVolume)
 ## in white with 14 red points, Team 1's starting HQ in blue and Team 2's in
@@ -8,8 +8,8 @@ extends Node
 ## Hover: the HQs fade out and the 14 points drag one after another into a "P".
 ## Mouse leaves: they drag back. The tab shows only the icon (no text).
 ##
-## Maps are drawn the in-game way up (+Z at the top), the same as the
-## Polygons tab's default view.
+## Maps are drawn from above like Godot's 3D top view, turned by the same Rotate
+## setting as the PolySnap tab (never mirrored).
 
 const PolygonsPanel = preload("panel.gd")
 
@@ -27,7 +27,6 @@ const COL_T2 := Color(1.0, 0.59, 0.16)
 const COL_DOT := Color(1.0, 0.373, 0.373)
 
 var plugin: EditorPlugin = null
-var flip_z := true          # in-game way up
 
 var _button: Button = null
 var _home: Array = []       # 14 Vector2, idle positions (icon grid)
@@ -51,7 +50,7 @@ func _find_button() -> Button:
 		return null
 	var base: Control = plugin.get_editor_interface().get_base_control()
 	for b in base.find_children("*", "Button", true, false):
-		if b.text == "Polygons" or b.get_meta("portal_polygons_tab", false):
+		if b.text == "PolySnap" or b.text == "Polygons" or b.get_meta("portal_polygons_tab", false):
 			# main screen buttons are toggle buttons in the title bar
 			if b.toggle_mode:
 				return b
@@ -64,7 +63,7 @@ func _hook_button() -> void:
 		return
 	_button.set_meta("portal_polygons_tab", true)
 	_button.text = ""
-	_button.tooltip_text = "PolyPoint"
+	_button.tooltip_text = "PolySnap"
 	_button.expand_icon = false
 	# keep our colors: don't let the editor tint the icon when hovered or selected
 	for c in ["icon_normal_color", "icon_hover_color", "icon_pressed_color", "icon_hover_pressed_color", "icon_focus_color", "icon_disabled_color"]:
@@ -102,8 +101,17 @@ func _world_xz(n: Node3D) -> PackedVector2Array:
 	var xf: Transform3D = n.global_transform
 	for p in n.get("points"):
 		var g: Vector3 = xf * Vector3(p.x, 0, p.y)
-		out.append(Vector2(g.x, -g.z if flip_z else g.z))
+		out.append(PolygonsPanel.rot(Vector2(g.x, g.z), _rotation()))
 	return out
+
+
+func _rotation() -> int:
+	if plugin == null:
+		return 0
+	var es = plugin.get_editor_interface().get_editor_settings()
+	if es.has_setting("portal_polygons/view/rotation"):
+		return int(es.get_setting("portal_polygons/view/rotation")) % 4
+	return 0
 
 
 func _map_from_scene(root: Node) -> Dictionary:
@@ -315,7 +323,7 @@ static func _pts_attr(pts) -> String:
 ## Put the tab back the way Godot made it (when the add-on is turned off).
 func restore() -> void:
 	if _button != null and is_instance_valid(_button):
-		_button.text = "Polygons"
+		_button.text = "PolySnap"
 		for c in ["icon_normal_color", "icon_hover_color", "icon_pressed_color", "icon_hover_pressed_color", "icon_focus_color", "icon_disabled_color"]:
 			_button.remove_theme_color_override(c)
 		if _button.mouse_entered.is_connected(_on_enter):

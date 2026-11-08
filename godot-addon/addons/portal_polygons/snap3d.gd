@@ -41,7 +41,7 @@ func make_toolbar() -> Control:
 	_toggle.toggle_mode = true
 	_toggle.flat = true
 	_toggle.text = "Point Snap"
-	_toggle.tooltip_text = "Portal Polygons: while you drag a PolygonVolume point, snap it onto corners (or edges) of other polygon volumes within the distance. Hold Alt to drag freely."
+	_toggle.tooltip_text = "PolySnap: while you drag a PolygonVolume point, snap it onto corners (or edges) of other polygon volumes within the distance. Hold Alt to drag freely."
 	_toggle.button_pressed = enabled
 	_toggle.toggled.connect(_on_toggled)
 	_toolbar.add_child(_toggle)
