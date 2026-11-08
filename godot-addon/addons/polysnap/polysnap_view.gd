@@ -68,7 +68,16 @@ func _gui_input(event: InputEvent) -> void:
 			_panning = mb.pressed
 			accept_event()
 		elif mb.button_index == MOUSE_BUTTON_LEFT:
-			if mb.pressed:
+			if mb.pressed and mb.double_click:
+				var dk = pick(mb.position)
+				if _drag_key != null:
+					panel.end_drag(_drag_key)
+					_drag_key = null
+					_magnet = null
+				_panning = false
+				if dk != null:
+					panel.show_point_in_3d(dk, is_after)
+			elif mb.pressed:
 				var k = pick(mb.position)
 				if is_after and k != null:
 					_drag_key = k

@@ -78,7 +78,7 @@ var _card_title: Label
 var _card_info: Label
 var _card_keep: CheckBox
 var _card_reset: Button
-var _card_show: Button
+var _card_hint: Label
 var _confirm: ConfirmationDialog
 var _alert: AcceptDialog
 var _filling_tree := false
@@ -242,11 +242,10 @@ func _build_ui() -> void:
 	_card_reset.tooltip_text = "Throw away your move for this point."
 	_card_reset.pressed.connect(_on_card_reset)
 	cb.add_child(_card_reset)
-	_card_show = Button.new()
-	_card_show.text = "Show in 3D"
-	_card_show.tooltip_text = "Select this volume in the scene tree and switch to the 3D view."
-	_card_show.pressed.connect(_on_card_show)
-	cb.add_child(_card_show)
+	_card_hint = Label.new()
+	_card_hint.text = "Double-click the point to show it in 3D."
+	_card_hint.modulate = Color(1, 1, 1, 0.6)
+	cv.add_child(_card_hint)
 
 	_confirm = ConfirmationDialog.new()
 	_confirm.title = "Finalize polygon changes"
@@ -418,11 +417,6 @@ func _on_card_keep(on: bool) -> void:
 func _on_card_reset() -> void:
 	if _card_key != null:
 		set_keep(_card_key, false)
-
-
-func _on_card_show() -> void:
-	if _card_key != null:
-		_show_in_3d(_card_key.x)
 
 
 func _on_scan() -> void:
@@ -951,14 +945,76 @@ func end_drag(key) -> void:
 	recompute(true)
 
 
-func _show_in_3d(vi: int) -> void:
+## Double-clicking a point: select its volume, switch to the 3D view and bring
+## the 3D camera to that point (in AFTER, to where the point will end up).
+func show_point_in_3d(key, in_after: bool) -> void:
 	var ei = _ei()
+	var vi: int = key.x
 	if ei == null or vi >= nodes.size() or not is_instance_valid(nodes[vi]):
 		return
-	ei.get_selection().clear()
-	ei.get_selection().add_node(nodes[vi])
-	ei.edit_node(nodes[vi])
+	var node: Node3D = nodes[vi]
+	var xf: Transform3D = node.global_transform
+	var lp: Vector2 = local_orig[vi][key.y]
+	var spot: Vector3 = xf * Vector3(lp.x, 0, lp.y)
+	if in_after:
+		var w: Vector2 = after[vi][key.y]
+		spot = Vector3(w.x, spot.y, w.y)
+	_card.visible = false
 	ei.set_main_screen_editor("3D")
+	await _focus_3d_camera(spot)
+	if not is_instance_valid(node):
+		return
+	ei.get_selection().clear()
+	ei.get_selection().add_node(node)
+	ei.edit_node(node)
+
+
+## Godot only lets the 3D view's own "Focus Selection" move its camera, so a
+## temporary marker (never saved, removed straight after) is selected at the spot
+## and focused on.
+func _focus_3d_camera(spot: Vector3) -> void:
+	var ei = _ei()
+	var root = ei.get_edited_scene_root()
+	if root == null or not root is Node:
+		return
+	var marker := Node3D.new()
+	marker.name = "PolySnapFocus"
+	root.add_child(marker)
+	marker.global_position = spot
+	ei.get_selection().clear()
+	ei.get_selection().add_node(marker)
+	for i in range(3):
+		await get_tree().process_frame
+	for vp_i in range(4):
+		var vp = ei.get_editor_viewport_3d(vp_i)
+		if vp == null:
+			continue
+		var holder = vp.get_parent()       # the viewport's on-screen container
+		if not (holder is Control and holder.is_visible_in_tree()):
+			continue
+		var menu := _focus_menu(vp)
+		if menu != null:
+			menu[0].id_pressed.emit(menu[1])
+	await get_tree().process_frame
+	ei.get_selection().remove_node(marker)
+	root.remove_child(marker)
+	marker.free()
+
+
+## The "Focus Selection" item of a 3D viewport's View menu: [PopupMenu, id] or [].
+func _focus_menu(vp: Node) -> Array:
+	var n: Node = vp
+	while n != null and not n.get_class() == "Node3DEditorViewport":
+		n = n.get_parent()
+	if n == null:
+		return []
+	for mb in n.find_children("*", "MenuButton", true, false):
+		var pm: PopupMenu = mb.get_popup()
+		for i in range(pm.item_count):
+			var sc: Shortcut = pm.get_item_shortcut(i)
+			if pm.get_item_text(i) == "Focus Selection" or (sc != null and sc.resource_name == "spatial_editor/focus_selection"):
+				return [pm, pm.get_item_id(i)]
+	return []
 
 
 # ================================================================ finalize

@@ -25,7 +25,8 @@ Open your map scene and click the **PolySnap** tab.
 |---|---|
 | **BEFORE / AFTER** | Your volumes from above, side by side. By default anchor points (ones that don't move) are white, off points in BEFORE are red, fixed points in AFTER are green, points you moved are blue and undone changes are grey. In AFTER, a grey ring and line show where a point started. Each view has a legend. |
 | **Colors** | Pick your own color for anchor, off, fixed, moved-by-you and undone points, and for the polygon outlines (one color, or a different color per polygon), each with a color wheel. Your colors are remembered in every project. **Reset colors** goes back to the defaults. |
-| **Hover a point** | A card shows what changes and by how much, with a **Keep this change** box. Untick it and the point stays where it was. **Show in 3D** selects the volume. |
+| **Hover a point** | A card shows what changes and by how much, with a **Keep this change** box. Untick it and the point stays where it was. |
+| **Double-click a point** | Switches to the 3D view, brings the camera to that point (in AFTER, to where it will end up) and selects its volume. |
 | **Drag a point in AFTER** | Move it where it should be. It snaps to nearby corners and edges of other volumes; hold **Alt** to place it freely. Untick **Keep my move** to throw the move away. |
 | **Changes list** | Every change with its own keep box. Click a row to zoom to it. |
 | **Needs a look** | Problems, corners that are close but weren't snapped (10-50 cm), and corners sitting on the edge of a volume lower in the scene. Click to zoom. |
