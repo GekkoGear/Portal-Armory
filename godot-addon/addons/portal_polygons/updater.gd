@@ -24,7 +24,7 @@ const TAG_PREFIX := "portal-polygons-rev"
 const PLUGIN_NAME := "Portal Polygons"
 const ZIP_FOLDER := "portal_polygons/"
 ## Files of versions that came before manifest.txt existed.
-const KNOWN_FILES := ["README.md", "align.gd", "panel.gd", "plugin.cfg", "plugin.gd", "snap3d.gd", "view.gd", "updater.gd", "manifest.txt"]
+const KNOWN_FILES := ["README.md", "align.gd", "panel.gd", "plugin.cfg", "plugin.gd", "snap3d.gd", "view.gd", "updater.gd", "tab_icon.gd", "manifest.txt"]
 const DOWNLOAD_PATH := "user://portal_polygons_update.zip"
 const BACKUP_DIR := "user://portal_polygons_backup"
 

@@ -19,12 +19,20 @@ func _ready() -> void:
 	custom_minimum_size = Vector2(200, 200)
 
 
+## World X/Z to screen. With "North up" on (the in-game way up), +Z is at the top;
+## off, it matches Godot's own top view (+Z at the bottom).
 func w2s(p: Vector2) -> Vector2:
-	return size * 0.5 + (p - panel.cam_center) * panel.cam_zoom
+	var d: Vector2 = (p - panel.cam_center) * panel.cam_zoom
+	if panel.flip_z:
+		d.y = -d.y
+	return size * 0.5 + d
 
 
 func s2w(s: Vector2) -> Vector2:
-	return panel.cam_center + (s - size * 0.5) / panel.cam_zoom
+	var d: Vector2 = (s - size * 0.5) / panel.cam_zoom
+	if panel.flip_z:
+		d.y = -d.y
+	return panel.cam_center + d
 
 
 func _pts(vi: int) -> PackedVector2Array:
@@ -242,9 +250,10 @@ func _draw_grid(font: Font) -> void:
 		draw_line(Vector2(sx, 0), Vector2(sx, size.y), gc, 1.0)
 		x += step
 		guard += 1
-	var z := floorf(tl.y / step) * step
+	var z := floorf(minf(tl.y, br.y) / step) * step
+	var z_end := maxf(tl.y, br.y)
 	guard = 0
-	while z <= br.y and guard < 400:
+	while z <= z_end and guard < 400:
 		var sy := w2s(Vector2(0, z)).y
 		draw_line(Vector2(0, sy), Vector2(size.x, sy), gc, 1.0)
 		z += step

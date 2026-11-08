@@ -31,11 +31,25 @@ Open your map scene and click **Polygons**.
 | **Needs a look** | Problems, corners that are close but weren't snapped (10-50 cm), and corners sitting on the edge of a volume lower in the scene. Click to zoom. |
 | **Finalize** | Writes the AFTER positions into the scene as one step. Ctrl+Z undoes it. |
 
+## The tab icon
+
+The **Polygons** tab shows only an icon: the open map seen from above, with its play area
+(the CombatArea's CombatVolume) in white with 14 red points, Team 1's starting HQ in blue and
+Team 2's in orange. Hover it and the HQs fade while the 14 points drag one after another into
+a "P"; move away and they drag back. With no map open it shows a fixed random shape. It
+updates when you open another scene.
+
+## Which way up
+
+Maps are drawn the in-game way up (+Z at the top). Untick **North up** in the Polygons tab to
+see them the way Godot's 3D top view shows them instead. The tab icon always uses the
+in-game way up.
+
 ## Updating (Coming Later)
 
 The toolbar has a **Check for Update** button that is switched off for now. When it is
 turned on, pressing it is the only time the add-on goes online: it reads the installed
-version (Rev 3.0 is the current one), checks GitHub for a newer `portal-polygons-rev...`
+version (Rev 3.5 is the current one), checks GitHub for a newer `portal-polygons-rev...`
 release, and only if there is one downloads it, checks it, backs up the old version and
 replaces only the tool's own files (listed in `manifest.txt`) in the folder you pick or
 drag in. Nothing else is ever deleted.

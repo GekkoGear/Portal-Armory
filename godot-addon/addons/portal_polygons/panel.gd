@@ -41,6 +41,8 @@ var change_keys: Array = []
 var cam_center := Vector2.ZERO
 var cam_zoom := 1.0
 var show_names := true
+var flip_z := true      # "North up": draw maps the in-game way up
+var _north: CheckBox
 
 # --- colors (saved in Editor Settings, so they stick across projects) ---
 const COLOR_ROWS := [
@@ -128,6 +130,12 @@ func _build_ui() -> void:
 	names.button_pressed = true
 	names.toggled.connect(_on_names_toggled)
 	bar.add_child(names)
+	_north = CheckBox.new()
+	_north.text = "North up"
+	_north.button_pressed = true
+	_north.tooltip_text = "On: maps are drawn the in-game way up. Off: the same way up as Godot's 3D top view."
+	_north.toggled.connect(_on_north_toggled)
+	bar.add_child(_north)
 	var col_btn := Button.new()
 	col_btn.text = "Colors"
 	col_btn.tooltip_text = "Pick the colors of anchor, off, fixed and other points, and the polygon outlines."
@@ -297,6 +305,9 @@ func load_colors() -> void:
 		if es.has_setting(k) and typeof(es.get_setting(k)) == TYPE_COLOR:
 			colors[row[0]] = es.get_setting(k)
 		_color_buttons[row[0]].color = colors[row[0]]
+	if es.has_setting("portal_polygons/view/north_up"):
+		flip_z = bool(es.get_setting("portal_polygons/view/north_up"))
+		_north.set_pressed_no_signal(flip_z)
 	var pk := "portal_polygons/colors/per_volume_outlines"
 	if es.has_setting(pk):
 		per_volume_outlines = bool(es.get_setting(pk))
@@ -360,6 +371,14 @@ func _open_colors() -> void:
 
 func _on_names_toggled(on: bool) -> void:
 	show_names = on
+	_redraw()
+
+
+func _on_north_toggled(on: bool) -> void:
+	flip_z = on
+	var es = _settings()
+	if es != null:
+		es.set_setting("portal_polygons/view/north_up", on)
 	_redraw()
 
 
@@ -788,11 +807,17 @@ func focus_on(at: Vector2, dist: float = 0.1) -> void:
 
 func zoom_at(world: Vector2, screen: Vector2, view_size: Vector2, f: float) -> void:
 	cam_zoom = clampf(cam_zoom * f, 0.01, 200000.0)
-	cam_center = world - (screen - view_size * 0.5) / cam_zoom
+	var off: Vector2 = (screen - view_size * 0.5) / cam_zoom
+	if flip_z:
+		off.y = -off.y
+	cam_center = world - off
 	_redraw()
 
 
+## d is a screen-space drag already divided by the zoom.
 func pan(d: Vector2) -> void:
+	if flip_z:
+		d.y = -d.y
 	cam_center += d
 	_redraw()
 

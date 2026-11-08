@@ -8,4 +8,5 @@ plugin.cfg
 plugin.gd
 snap3d.gd
 updater.gd
+tab_icon.gd
 view.gd

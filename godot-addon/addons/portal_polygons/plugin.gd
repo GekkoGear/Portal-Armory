@@ -4,10 +4,12 @@ extends EditorPlugin
 
 const PolygonsPanel = preload("panel.gd")
 const PointSnap = preload("snap3d.gd")
+const TabIcon = preload("tab_icon.gd")
 
 var _panel = null
 var _snap = null
 var _snap_bar: Control = null
+var _tab_icon = null
 
 
 func _enter_tree() -> void:
@@ -23,6 +25,10 @@ func _enter_tree() -> void:
 	add_child(_snap)
 	_snap_bar = _snap.make_toolbar()
 	add_control_to_container(CONTAINER_SPATIAL_EDITOR_MENU, _snap_bar)
+	# Animated tab icon (the open map, dragging into a "P" on hover).
+	_tab_icon = TabIcon.new()
+	_tab_icon.plugin = self
+	add_child(_tab_icon)
 
 
 func _exit_tree() -> void:
@@ -38,6 +44,10 @@ func _exit_tree() -> void:
 	if _snap != null:
 		_snap.queue_free()
 		_snap = null
+	if _tab_icon != null:
+		_tab_icon.restore()
+		_tab_icon.queue_free()
+		_tab_icon = null
 
 
 func _has_main_screen() -> bool:
@@ -66,3 +76,5 @@ func _get_plugin_icon() -> Texture2D:
 func _on_scene_changed(root) -> void:
 	if _panel != null:
 		_panel.on_scene_changed(root)
+	if _tab_icon != null:
+		_tab_icon.schedule_refresh()
