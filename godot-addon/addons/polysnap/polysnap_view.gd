@@ -80,6 +80,7 @@ func _gui_input(event: InputEvent) -> void:
 			elif mb.pressed:
 				var k = pick(mb.position)
 				if is_after and k != null:
+					panel.select_in_tree(k)
 					_drag_key = k
 					panel.begin_drag(k)
 				else:

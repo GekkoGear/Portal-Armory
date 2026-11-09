@@ -27,6 +27,7 @@ Open your map scene and click the **PolySnap** tab.
 | **Colors** | Pick your own color for anchor, off, fixed, moved-by-you and undone points, and for the polygon outlines (one color, or a different color per polygon), each with a color wheel. Your colors are remembered in every project. **Reset colors** goes back to the defaults. |
 | **Hover a point** | A card shows what changes and by how much, with a **Keep this change** box. Untick it and the point stays where it was. |
 | **Double-click a point** | Switches to the 3D view, brings the camera to that point (in AFTER, to where it will end up) and selects its volume. |
+| **Click a point in AFTER** | Selects its volume in the scene tree and the Inspector. You stay in the PolySnap tab. |
 | **Drag a point in AFTER** | Move it where it should be. It snaps to nearby corners and edges of other volumes; hold **Alt** to place it freely. Untick **Keep my move** to throw the move away. |
 | **Changes list** | Every change with its own keep box. Click a row to zoom to it. |
 | **Needs a look** | Problems, corners that are close but weren't snapped (10-50 cm), and corners sitting on the edge of a volume lower in the scene. Click to zoom. |
@@ -91,6 +92,13 @@ Polygon volumes that are hidden in the scene are skipped too, including any volu
 hidden parent. They don't appear in BEFORE/AFTER or the lists, they aren't used as snap
 targets, and Finalize won't change them. If you show or hide a volume while the PolySnap tab
 is open, press **Scan Scene** (or reopen the tab) to refresh.
+
+## Credits
+
+The **Credits** button in the PolySnap tab lists these too.
+
+- **Gekko**: PolySnap, the tool itself
+- **andy6170**: visible-only feature (hidden polygon volumes are skipped)
 
 Same engine as the standalone *Spatial Poly Snap* exe in this repo, which works on
 exported `.spatial.json` files instead.

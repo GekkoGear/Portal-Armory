@@ -79,6 +79,8 @@ var _card_info: Label
 var _card_keep: CheckBox
 var _card_reset: Button
 var _card_hint: Label
+var _select_token := 0
+var _credits: AcceptDialog = null
 var _confirm: ConfirmationDialog
 var _alert: AcceptDialog
 var _filling_tree := false
@@ -150,6 +152,11 @@ func _build_ui() -> void:
 	var spacer := Control.new()
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	bar.add_child(spacer)
+	var credits := Button.new()
+	credits.text = "Credits"
+	credits.tooltip_text = "Who made PolySnap."
+	credits.pressed.connect(_show_credits)
+	bar.add_child(credits)
 	var upd := Button.new()
 	upd.text = "Check for Update"
 	if Updater.UPDATES_ENABLED:
@@ -945,9 +952,33 @@ func end_drag(key) -> void:
 	recompute(true)
 
 
+## Clicking a point in AFTER: select its volume in the scene tree (and the
+## Inspector), staying in the PolySnap tab.
+func select_in_tree(key) -> void:
+	var ei = _ei()
+	var vi: int = key.x
+	if ei == null or vi >= nodes.size() or not is_instance_valid(nodes[vi]):
+		return
+	var sel = ei.get_selection()
+	if sel.get_selected_nodes().size() == 1 and sel.get_selected_nodes()[0] == nodes[vi]:
+		return
+	sel.clear()
+	sel.add_node(nodes[vi])
+	ei.edit_node(nodes[vi])
+	# Older Godot versions jump to the 3D view a moment after a 3D node is
+	# selected: come straight back, unless a double-click asked for 3D meanwhile.
+	_select_token += 1
+	var token := _select_token
+	for i in range(3):
+		await get_tree().process_frame
+	if token == _select_token and not is_visible_in_tree():
+		ei.set_main_screen_editor("PolySnap")
+
+
 ## Double-clicking a point: select its volume, switch to the 3D view and bring
 ## the 3D camera to that point (in AFTER, to where the point will end up).
 func show_point_in_3d(key, in_after: bool) -> void:
+	_select_token += 1          # a double-click wants the 3D view: don't switch back
 	var ei = _ei()
 	var vi: int = key.x
 	if ei == null or vi >= nodes.size() or not is_instance_valid(nodes[vi]):
@@ -1065,3 +1096,25 @@ func _on_map_icon_toggled(on: bool) -> void:
 func sync_map_icon_box() -> void:
 	if _icon_box != null and plugin != null:
 		_icon_box.set_pressed_no_signal(plugin.map_icon_on())
+
+
+const CREDITS := [
+	["Gekko", "PolySnap, the tool itself"],
+	["andy6170", "Visible-only feature: hidden polygon volumes are skipped"],
+]
+
+
+func _show_credits() -> void:
+	if _credits == null:
+		_credits = AcceptDialog.new()
+		_credits.title = "PolySnap Credits"
+		var cfg := ConfigFile.new()
+		var ver := ""
+		if cfg.load(get_script().resource_path.get_base_dir().path_join("plugin.cfg")) == OK:
+			ver = str(cfg.get_value("plugin", "version", ""))
+		var lines := ["PolySnap Rev %s" % ver, ""]
+		for c in CREDITS:
+			lines.append("%s  -  %s" % [c[0], c[1]])
+		_credits.dialog_text = "\n".join(lines)
+		add_child(_credits)
+	_credits.popup_centered()
