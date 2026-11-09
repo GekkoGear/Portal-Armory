@@ -54,7 +54,7 @@ a map sits the way you think of it; the tab icon turns with them. Turning never 
 
 The toolbar has a **Check for Update** button that is switched off for now. When it is
 turned on, pressing it is the only time the add-on goes online: it reads the installed
-version (Rev 3.6 is the current one), checks GitHub for a newer `polysnap-rev...`
+version (Rev 3.7 is the current one), checks GitHub for a newer `polysnap-rev...`
 release, and only if there is one downloads it, checks it, backs up the old version and
 replaces only the tool's own files (listed in `manifest.txt`) in the folder you pick or
 drag in. Nothing else is ever deleted.
