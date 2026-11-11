@@ -8,7 +8,7 @@ extends Node
 ##
 ## Steps:
 ##   1. Read the installed version from the chosen folder's plugin.cfg.
-##   2. Ask GitHub for the releases, pick the newest one tagged "polysnap-rev<version>" (e.g. polysnap-rev3.7).
+##   2. Ask GitHub for the releases, pick the newest one tagged "polysnap-rev<version>" (e.g. polysnap-rev3.7.1).
 ##   3. Only if it is newer: download its .zip to a temporary file, and check that
 ##      it really is PolySnap (right name, right version, only plain files).
 ##   4. Back up the old tool files, delete ONLY the tool's own files (the list in

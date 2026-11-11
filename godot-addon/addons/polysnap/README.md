@@ -25,7 +25,7 @@ Open your map scene and click the **PolySnap** tab.
 |---|---|
 | **BEFORE / AFTER** | Your volumes from above, side by side. By default anchor points (ones that don't move) are white, off points in BEFORE are red, fixed points in AFTER are green, points you moved are blue and undone changes are grey. In AFTER, a grey ring and line show where a point started. Each view has a legend. |
 | **Colors** | Pick your own color for anchor, off, fixed, moved-by-you and undone points, and for the polygon outlines (one color, or a different color per polygon), each with a color wheel. Your colors are remembered in every project. **Reset colors** goes back to the defaults. |
-| **Hover a point** | A card shows what changes and by how much, with a **Keep this change** box. Untick it and the point stays where it was. |
+| **Hover a point** | After half a second a card shows what changes and by how much, with a **Keep this change** box. Untick it and the point stays where it was. The card stays up for 3 seconds after your mouse leaves the point (and as long as the mouse is on the card), so you can reach it. With points close together it only switches once you rest on another point for half a second. |
 | **Double-click a point** | Switches to the 3D view, brings the camera to that point (in AFTER, to where it will end up) and selects its volume. |
 | **Click a point in AFTER** | Selects its volume in the scene tree and the Inspector. You stay in the PolySnap tab. |
 | **Drag a point in AFTER** | Move it where it should be. It snaps to nearby corners and edges of other volumes; hold **Alt** to place it freely. Untick **Keep my move** to throw the move away. |
@@ -54,7 +54,7 @@ a map sits the way you think of it; the tab icon turns with them. Turning never 
 
 The toolbar has a **Check for Update** button that is switched off for now. When it is
 turned on, pressing it is the only time the add-on goes online: it reads the installed
-version (Rev 3.7 is the current one), checks GitHub for a newer `polysnap-rev...`
+version (Rev 3.7.1 is the current one), checks GitHub for a newer `polysnap-rev...`
 release, and only if there is one downloads it, checks it, backs up the old version and
 replaces only the tool's own files (listed in `manifest.txt`) in the folder you pick or
 drag in. Nothing else is ever deleted.

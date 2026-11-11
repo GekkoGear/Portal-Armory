@@ -64,6 +64,14 @@ var _updater = null
 var hover_key = null
 var _card_key = null
 var _card_hide := 0.0
+## The hover card waits this long on a point before it opens (or switches to
+## another point), and stays this long after the mouse leaves, so it can be reached.
+const CARD_SHOW_DELAY := 0.5
+const CARD_HIDE_DELAY := 3.0
+var _pending_key = null      # point the mouse is resting on, not shown yet
+var _pending_wait := 0.0
+var _pending_view = null
+var _pending_pos := Vector2.ZERO
 
 # --- controls ---
 var _snap: SpinBox
@@ -858,18 +866,33 @@ func pan(d: Vector2) -> void:
 
 func view_hover(key, view, local: Vector2) -> void:
 	hover_key = key
-	if key != null:
-		_card_key = key
+	if key == null:
+		_pending_key = null
+	elif _card.visible and key == _card_key:
 		_card_hide = 0.0
-		_refresh_card()
-		var p: Vector2 = view.global_position + local - global_position + Vector2(18, 14)
-		_card.reset_size()
-		var cs := _card.get_combined_minimum_size()
-		p.x = clampf(p.x, 4, maxf(4, size.x - cs.x - 4))
-		p.y = clampf(p.y, 4, maxf(4, size.y - cs.y - 4))
-		_card.position = p
-		_card.visible = true
+		_pending_key = null
+	elif key != _pending_key:
+		# A new point: wait a moment before opening the card for it, so points
+		# close together don't make it flick between them.
+		_pending_key = key
+		_pending_wait = 0.0
+	if key != null:
+		_pending_view = view
+		_pending_pos = local
 	_redraw()
+
+
+func _open_card(key, view, local: Vector2) -> void:
+	_card_key = key
+	_card_hide = 0.0
+	_refresh_card()
+	var p: Vector2 = view.global_position + local - global_position + Vector2(18, 14)
+	_card.reset_size()
+	var cs := _card.get_combined_minimum_size()
+	p.x = clampf(p.x, 4, maxf(4, size.x - cs.x - 4))
+	p.y = clampf(p.y, 4, maxf(4, size.y - cs.y - 4))
+	_card.position = p
+	_card.visible = true
 
 
 func _refresh_card() -> void:
@@ -888,15 +911,25 @@ func _refresh_card() -> void:
 
 
 func _process(delta: float) -> void:
-	if _card == null or not _card.visible:
+	if _card == null:
 		return
-	var over_card := _card.get_rect().grow(8).has_point(get_local_mouse_position())
-	if hover_key == null and not over_card:
-		_card_hide += delta
-		if _card_hide > 0.35:
-			_card.visible = false
-	else:
+	var over_card := _card.visible and _card.get_rect().grow(8).has_point(get_local_mouse_position())
+	if _pending_key != null and not over_card:
+		if _pending_key == hover_key and _pending_view != null and is_instance_valid(_pending_view):
+			_pending_wait += delta
+			if _pending_wait >= CARD_SHOW_DELAY:
+				_open_card(_pending_key, _pending_view, _pending_pos)
+				_pending_key = null
+		else:
+			_pending_key = null
+	if not _card.visible:
+		return
+	if over_card or (hover_key != null and hover_key == _card_key):
 		_card_hide = 0.0
+	else:
+		_card_hide += delta
+		if _card_hide > CARD_HIDE_DELAY:
+			_card.visible = false
 
 
 var _drag_start = null
@@ -905,6 +938,7 @@ var _drag_start = null
 func begin_drag(key) -> void:
 	_drag_start = after[key.x][key.y]
 	_card.visible = false
+	_pending_key = null
 
 
 ## Move key to world position w. Snaps to the closest corner, or else edge, of
