@@ -9,6 +9,9 @@ var hover_key = null      # Vector2i(volume, point) under the mouse, or null
 var _drag_key = null
 var _panning := false
 var _magnet = null        # world spot the dragged point is snapping to
+## Light layer on top of the map for the hover highlight and the snap marker, so
+## moving the mouse never has to redraw the whole map.
+var _overlay: Control
 
 
 func _ready() -> void:
@@ -17,6 +20,16 @@ func _ready() -> void:
 	size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	size_flags_vertical = Control.SIZE_EXPAND_FILL
 	custom_minimum_size = Vector2(200, 200)
+	_overlay = Control.new()
+	_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_overlay.draw.connect(_draw_overlay)
+	add_child(_overlay)
+
+
+func redraw_overlay() -> void:
+	if _overlay != null:
+		_overlay.queue_redraw()
 
 
 ## World X/Z to screen, always seen from above like Godot's 3D top view
@@ -34,17 +47,25 @@ func _pts(vi: int) -> PackedVector2Array:
 
 
 ## The point under the mouse (within 9 px). Changed points win over plain ones.
+## Works in world units so it doesn't have to turn every point into a screen spot.
 func pick(s: Vector2):
 	if panel == null or panel.before.is_empty():
 		return null
+	var w := s2w(s)
+	var r: float = 9.0 / panel.cam_zoom
+	var r2 := r * r
 	var best = null
-	var best_d := 9.0
+	var best_d := r2
 	var best_changed := false
+	var boxes: Array = panel.vol_boxes(is_after)
 	for vi in range(panel.before.size()):
+		var bx: Rect2 = boxes[vi]
+		if w.x < bx.position.x - r or w.y < bx.position.y - r or w.x > bx.end.x + r or w.y > bx.end.y + r:
+			continue
 		var pts := _pts(vi)
 		for k in range(pts.size()):
-			var d := w2s(pts[k]).distance_to(s)
-			if d > 9.0:
+			var d := w.distance_squared_to(pts[k])
+			if d > r2:
 				continue
 			var key := Vector2i(vi, k)
 			var changed: bool = panel.change_state(key) != ""
@@ -188,26 +209,30 @@ func _draw() -> void:
 				draw_arc(a, 4.5, 0, TAU, 18, Color(0.75, 0.75, 0.8, 0.8), 1.5, true)
 			draw_circle(b, 5.0, col)
 
+	_draw_legend(font)
+	_draw_title(font, fs)
+
+
+func _draw_overlay() -> void:
+	if panel == null or panel.before.is_empty():
+		return
+	var o := _overlay
 	# Hover highlight (shared between both views).
 	var hk = panel.hover_key
 	if hk != null and hk.x < panel.before.size():
-		var hs := w2s(_pts(hk.x)[hk.y])
-		draw_arc(hs, 9.0, 0, TAU, 24, Color(1, 1, 1, 0.95), 2.0, true)
-		# also outline the volume it belongs to
 		var pts := _pts(hk.x)
-		var sp := PackedVector2Array()
-		for p in pts:
-			sp.append(w2s(p))
-		sp.append(sp[0])
-		draw_polyline(sp, Color(1, 1, 1, 0.55), 3.0, true)
-
+		if hk.y < pts.size():
+			o.draw_arc(w2s(pts[hk.y]), 9.0, 0, TAU, 24, Color(1, 1, 1, 0.95), 2.0, true)
+			# also outline the volume it belongs to
+			var sp := PackedVector2Array()
+			for p in pts:
+				sp.append(w2s(p))
+			sp.append(sp[0])
+			o.draw_polyline(sp, Color(1, 1, 1, 0.55), 3.0, true)
 	if _magnet != null and is_after:
 		var m := w2s(_magnet)
-		draw_line(m + Vector2(-8, 0), m + Vector2(8, 0), Color(0.4, 1, 0.6), 2.0)
-		draw_line(m + Vector2(0, -8), m + Vector2(0, 8), Color(0.4, 1, 0.6), 2.0)
-
-	_draw_legend(font)
-	_draw_title(font, fs)
+		o.draw_line(m + Vector2(-8, 0), m + Vector2(8, 0), Color(0.4, 1, 0.6), 2.0)
+		o.draw_line(m + Vector2(0, -8), m + Vector2(0, 8), Color(0.4, 1, 0.6), 2.0)
 
 
 func _draw_legend(font: Font) -> void:

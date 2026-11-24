@@ -818,8 +818,37 @@ func set_keep(key, keep: bool) -> void:
 # ============================================================ view / input
 
 func _redraw() -> void:
+	_boxes = [null, null]       # points or camera may have changed
 	for v in _views:
 		v.queue_redraw()
+		v.redraw_overlay()
+
+
+## Only the hover highlight changed: redraw the light overlay, not the map.
+func _redraw_hover() -> void:
+	for v in _views:
+		v.redraw_overlay()
+
+
+var _boxes: Array = [null, null]
+
+
+## World bounding box of every volume (BEFORE or AFTER), for quick point picking.
+func vol_boxes(in_after: bool) -> Array:
+	var i := 1 if in_after else 0
+	if _boxes[i] == null:
+		var out: Array = []
+		var src: Array = after if in_after else before
+		for pts in src:
+			if pts.is_empty():
+				out.append(Rect2(Vector2(INF, INF), Vector2.ZERO))
+				continue
+			var b := Rect2(pts[0], Vector2.ZERO)
+			for p in pts:
+				b = b.expand(p)
+			out.append(b)
+		_boxes[i] = out
+	return _boxes[i]
 
 
 func fit_view() -> void:
@@ -865,6 +894,7 @@ func pan(d: Vector2) -> void:
 
 
 func view_hover(key, view, local: Vector2) -> void:
+	var changed: bool = key != hover_key
 	hover_key = key
 	if key == null:
 		_pending_key = null
@@ -879,7 +909,8 @@ func view_hover(key, view, local: Vector2) -> void:
 	if key != null:
 		_pending_view = view
 		_pending_pos = local
-	_redraw()
+	if changed:
+		_redraw_hover()
 
 
 func _open_card(key, view, local: Vector2) -> void:
